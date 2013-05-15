@@ -8,7 +8,7 @@ import scipy.interpolate as intp
 
 #Max number of ion species to count
 nions = 17
-cloudy_dir = "/home/spb/codes/ArepoCoolingTables/tmp_spb/"
+cloudy_dir = path.expanduser("~/codes/ArepoCoolingTables/tmp_spb/")
 
 def handle_single_line(splitline):
     """Short function to handle a single cloudy line, split by whitespace, and deal with lack of spaces"""
