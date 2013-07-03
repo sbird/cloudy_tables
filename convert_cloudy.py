@@ -5,10 +5,11 @@ import numpy as np
 import re
 import os.path as path
 import scipy.interpolate as intp
+from scipy.ndimage import map_coordinates
 
 #Max number of ion species to count
 nions = 17
-cloudy_dir = path.expanduser("~/codes/ArepoCoolingTables/tmp_spb/")
+cloudy_dir = path.expanduser("~/codes/ArepoCoolingTables/ion_out/")
 
 def handle_single_line(splitline):
     """Short function to handle a single cloudy line, split by whitespace, and deal with lack of spaces"""
@@ -72,21 +73,27 @@ def convert_single_file(ion_table):
         line = f.readline()
     return num_table
 
-def read_all_tables(nred, nmet, nrho, directory):
+def read_all_tables(red, dens, met, temp, directory):
     """
-    Read a batch of tables on a grid of redshift (nred), metallicity (nmet) and density (nrho) from a directory.
-    Subdirs are in the form: $RED_$MET_$DENS/
+    Read a batch of tables on a grid of density (dens), metallicity (met) and temperature (rho) from a directory.
+    Subdirs are in the form: zz$red/h$DENS_Z$MET_T$TEMP/
     Returns a table with the indices:
-    REDSHIFT, METALLICITY, DENSITY, SPECIES, ION
+    REDSHIFT, METALLICITY, DENSITY, TEMPERATURE, SPECIES, ION
     """
     #Last two indices are num. species and n. ions
-    tables = np.empty([nred, nmet, nrho,8, nions])
-    for zz in range(1,nred+1):
-        for ZZ in range(1, nmet+1):
-            for rr in range(1, nrho+1):
-                strnums = str(zz)+"_"+str(ZZ)+"_"+str(rr)
-                ionfile = directory+"/"+strnums+"/ionization_"+strnums+".dat"
-                tables[zz-1,ZZ-1,rr-1,:,:] = convert_single_file(ionfile)
+    nred = np.size(red)
+    nrho = np.size(dens)
+    nmet = np.size(met)
+    ntemp = np.size(temp)
+    tables = np.empty([nred, nmet, nrho, ntemp,8, nions])
+    for zz in xrange(nred):
+        zdir = "zz"+str(red[zz])
+        for ZZ in xrange(nmet):
+            for rr in xrange(nrho):
+                for tt in xrange(ntemp):
+                    strnums = "h"+str(dens[rr])+"_Z"+str(met[ZZ])+"_T"+str(temp[tt])
+                    ionfile = path.join(directory, zdir, strnums, "ionization.dat")
+                    tables[zz,ZZ,rr,tt,:,:] = convert_single_file(ionfile)
     return tables
 
 class CloudyTable:
@@ -94,9 +101,10 @@ class CloudyTable:
     def __init__(self, redshift, directory=cloudy_dir):
         """Read a cloudy table from somewhere"""
         self.savefile = path.join(directory,"cloudy_table.npz")
-        self.reds = np.array([1,2,3,4,5,6])
-        self.mets = np.array([-4,-3,-2,-1,0,1,2])
-        self.dens = np.array([-6,-5,-4,-3,-2,-1,0,1,2,3])
+        self.reds = np.arange(2,5)
+        self.dens = np.arange(-6,4)
+        self.mets = np.arange(-4,3)
+        self.temp = np.arange(3,9)
         self.species = ("He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
         #Solar abundances from Hazy table 7.1 as Z = n/n(H)
         self.solar = np.array([0.1, 2.45e-4, 8.51e-5, 4.9e-4, 1.e-4, 3.47e-5, 3.47e-5, 2.82e-5])
@@ -104,45 +112,43 @@ class CloudyTable:
             datafile = np.load(self.savefile)
             self.table = datafile["table"]
         except (IOError, KeyError):
-            self.table = read_all_tables(np.size(self.reds), np.size(self.mets), np.size(self.dens), directory)
+            self.table = read_all_tables(self.reds, self.dens, self.mets, self.temp, directory)
             self.save_file()
         self.directory = directory
         #Set up interpolation objects
         #Redshift is first axis.
+        if redshift < 2.0 and redshift > 1.9:
+            redshift = 2.0
+        #Floating point roundoff taking this out of the integration boundary
+        if redshift < 4.1 and redshift > 4.0:
+            redshift = 4.0
         red_ints = intp.interp1d(self.reds, self.table,axis = 0)
         self.red_table = red_ints(redshift)
 
 
-    def ion(self,species, ion, met, rho):
+    def ion(self,species, ion, met, rho, temp):
         """Interpolate a table onto given redshift, metallicity and density for species
         Returns a log( ionisation fraction ).
         rho is the density of hydrogen in atoms / cm^3. Internally the log is taken
         met is the mass-weighted metallicity of a species
         specified as Z = n/ n(H), and internally converted into
         X = log_10(Z / Z_solar) for cloudy
+        temp is the temperature in K
         red is the redshift
         species is the element name of the metal species we want
         ion is the ionisation number, starting from 1, so CIV is ('C', 4).
         Returns the fraction of this ion in the species
         """
         cspe = self.species.index(species)
-        crho = np.log10(rho)
-        #So. The z value is flattened before use, which means you
-        #must be very careful to get x and y the right way around here.
-        #Shape (z) == (6,9) and it seems that this means the first value to
-        #pass to interp2d is the one with 9 entries.
-        #So, yes, this routine is using column-major order!
-        #From the documentation: "x can specify the column coordinates and y the row coordinates"
-        #Also note that bounds_error and fill_value do not in fact do anything at all -
-        #the interpolator will very happily interpolate outside its domain.
-        ints = intp.interp2d(self.dens, self.mets, self.red_table[:,:,cspe,ion-1])
-        #For super small metallicities
-        #use the lowest ion fraction we have: most of these will be 1e-30, ie, zero metallicity.
-        min_met = self.solar[cspe]*10**np.min(self.mets)
-        met[np.where(met < min_met)] = min_met
-        cmet = np.log10(met/self.solar[cspe])
-        ions = np.array([ints(cmet[ii], crho[ii]) for ii in range(0, np.size(crho))])
-        return 10**np.ravel(ions)
+        #In units of solar metallicity, then grid
+        cmet = (np.log10(met/self.solar[cspe])-self.mets[0])*(np.size(self.mets)-1)/(self.mets[-1]-self.mets[0])
+        #Grid coords.
+        crho = (np.log10(rho)-self.dens[0])*(np.size(self.dens)-1)/(self.dens[-1]-self.dens[0])
+        ctemp = (np.log10(temp)-self.temp[0])*(np.size(self.temp)-1)/(self.temp[-1]-self.temp[0])
+        coords = np.vstack((cmet, crho, ctemp))
+        #mode = nearest handles points outside the grid - they get put onto the nearest grid point
+        ions = map_coordinates(self.red_table[:,:,:,cspe,ion-1],coords, mode='nearest')
+        return 10**ions
 
     def get_solar(self,species):
         """Get the solar metallicity for a species"""
