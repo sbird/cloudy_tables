@@ -104,7 +104,7 @@ class CloudyTable:
         self.reds = np.arange(2,5)
         self.dens = np.arange(-6,4)
         self.mets = np.arange(-4,3)
-        self.temp = np.arange(3,9)
+        self.temp = np.arange(3,8.5, 0.5)
         self.species = ("He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
         #Solar abundances from Hazy table 7.1 as Z = n/n(H)
         self.solar = np.array([0.1, 2.45e-4, 8.51e-5, 4.9e-4, 1.e-4, 3.47e-5, 3.47e-5, 2.82e-5])
