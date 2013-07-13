@@ -1,8 +1,11 @@
 """Generate parameter files for cloudy, then run cloudy a number of times to generate a folder tree of files"""
 import os.path as path
-import os
 import numpy as np
 import math
+import subprocess
+import os
+import multiprocessing as mp
+import cold_gas
 
 def load_uvb_table(redshift, uvb_path="UVB_tables"):
     """Load one of Claude's UVB tables, and convert to Cloudy units"""
@@ -15,15 +18,21 @@ def load_uvb_table(redshift, uvb_path="UVB_tables"):
     uvb_table[:,1] = np.log10(4*math.pi*uvb_table[:,1])-21
     return uvb_table
 
-def atten(hden):
-    """Compute the UVB attenuation factor at high densities"""
-    #Note: the UVB is not attentuated at high hydrogen densities.
-    #It should only be attenuated for a particular frequency band around 1217 A.
-    #Doing this right is really too complicated.
-    return 1.
+class UVBAtten(cold_gas.RahmatiRT):
+    """Attenuate the UVB using the self-shielding prescription of Rahmati 2013"""
 
-def gen_cloudy_uvb(uvb_table, hden):
+    def atten(self,hden, temp):
+        """Compute the UVB attenuation factor at high densities.
+        Reduce the UVB intensity by the same factor that Rahmati
+        reduces the photoionisation rate by."""
+        #Note: the UVB is not attentuated at high hydrogen densities.
+        #It should only be attenuated for a particular frequency band around 1217 A.
+        #Doing this right is really too complicated.
+        return np.log10(self.photo_rate(10**hden, 10**temp)/self.gamma_UVB)
+
+def gen_cloudy_uvb(uvb_table, redshift, hden,temp):
     """Generate the cloudy input string from a UVB table"""
+    UVB = UVBAtten(redshift)
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
@@ -34,7 +43,7 @@ def gen_cloudy_uvb(uvb_table, hden):
     uvb_str+="continue ("+str(uvb_table[-1,0]*1.0001)+" , -35.0 )\n"
     uvb_str+="continue ( 7354000.0 , -35.0 ) \n"
     #That was the UVB shape, now print the amplitude
-    uvb_str+="f(nu)="+str(uvb_table[0,1]*atten(hden))+" at "+str(uvb_table[0,0])+" Ryd"
+    uvb_str+="f(nu)="+str(uvb_table[0,1]+UVB.atten(hden,temp))+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
 
 def output_cloudy_config(redshift, hden, metals, temp, outfile="cloudy_param.in"):
@@ -54,7 +63,7 @@ iterate to convergence
 
     #Get the UVB table
     uvb_table = load_uvb_table(redshift)
-    uvb_str = gen_cloudy_uvb(uvb_table, hden)
+    uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp)
     #Print UVB
     out.write(uvb_str)
     #Print output options
@@ -107,13 +116,15 @@ def outdir(redshift, hden, temp, tdir="ion_out"):
         pass
     return real_outdir
 
+def gen_redshift(rredshift):
+    """Function for generating tables at a particular redshift"""
+    for hhden in np.arange(-6.,4.,0.2):
+        for ttemp in np.arange(3.,8.1,0.1):
+            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp)
+            infile = path.join(ooutdir, "cloudy_param")
+            if not path.exists(path.join(ooutdir, "ionization.dat")):
+                subprocess.call(['./cloudy.exe', '-r', infile])
+
 if __name__ == "__main__":
-    for rredshift in [4,3,2]:
-        for hhden in np.arange(-6.,4.,0.2):
-            for ttemp in np.arange(3.,8.1,0.1):
-                ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp)
-                pstr="./cloudy.exe -r "
-                infile = path.join(ooutdir, "cloudy_param")
-                pstr+=infile
-                if not path.exists(path.join(ooutdir, "ionization.dat")):
-                    os.system(pstr)
+    pool = mp.Pool(processes=3)
+    pool.map(gen_redshift,[4,3,2])
