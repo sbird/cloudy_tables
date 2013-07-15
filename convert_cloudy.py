@@ -97,7 +97,7 @@ def read_all_tables(red, dens, temp, directory):
         for rr in xrange(nrho):
             for tt in xrange(ntemp):
                 strnums = path.join("h"+str(dens[rr]), "T"+str(temp[tt]))
-                if dens[rr] < 1.e-3:
+                if np.abs(dens[rr]) < 1.e-3:
                     strnums = path.join("h0.0", "T"+str(temp[tt]))
                 ionfile = path.join(directory, zdir, strnums, "ionization.dat")
                 tables[zz,rr,tt,:,:] = convert_single_file(ionfile)

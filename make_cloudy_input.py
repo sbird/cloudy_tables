@@ -111,7 +111,7 @@ export PATH=${MPI}/bin:$PATH:$LOCAL/misc/bin
 def outdir(redshift, hden, temp, tdir="ion_out"):
     """Get the directory for output, and make sure it exists"""
     true_outdir= path.join(tdir,"zz"+str(redshift))
-    if hden < 1.e-3:
+    if np.abs(hden) < 1.e-3:
         paramdir = path.join("h0.0","T"+str(temp))
     else:
         paramdir = path.join("h"+str(hden),"T"+str(temp))
