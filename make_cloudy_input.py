@@ -30,7 +30,7 @@ class UVBAtten(cold_gas.RahmatiRT):
         #Doing this right is really too complicated.
         return np.log10(self.photo_rate(10**hden, 10**temp)/self.gamma_UVB)
 
-def gen_cloudy_uvb(uvb_table, redshift, hden,temp):
+def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
     """Generate the cloudy input string from a UVB table"""
     UVB = UVBAtten(redshift)
     #First output very small background at low energies
@@ -43,13 +43,16 @@ def gen_cloudy_uvb(uvb_table, redshift, hden,temp):
     uvb_str+="continue ("+str(uvb_table[-1,0]*1.0001)+" , -35.0 )\n"
     uvb_str+="continue ( 7354000.0 , -35.0 ) \n"
     #That was the UVB shape, now print the amplitude
-    uvb_str+="f(nu)="+str(uvb_table[0,1]+UVB.atten(hden,temp))+" at "+str(uvb_table[0,0])+" Ryd\n"
+    if atten:
+        uvb_str+="f(nu)="+str(uvb_table[0,1]+UVB.atten(hden,temp))+" at "+str(uvb_table[0,0])+" Ryd\n"
+    else:
+        uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
 
-def output_cloudy_config(redshift, hden, metals, temp, outfile="cloudy_param.in"):
+def output_cloudy_config(redshift, hden, metals, temp, atten=True, tdir="ion_out",outfile="cloudy_param.in"):
     """Generate a cloudy config file with the given options, in directory outdir/zz(redshift)"""
 
-    real_outdir = outdir(redshift, hden, temp)
+    real_outdir = outdir(redshift, hden, temp, tdir)
     out = open(path.join(real_outdir,outfile),'w')
     #header with general cloudy parameters
     header="""no molecules                            #turn off all molecules, only atomic cooling
@@ -63,7 +66,7 @@ iterate to convergence
 
     #Get the UVB table
     uvb_table = load_uvb_table(redshift)
-    uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp)
+    uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp,atten)
     #Print UVB
     out.write(uvb_str)
     #Print output options
@@ -108,7 +111,10 @@ export PATH=${MPI}/bin:$PATH:$LOCAL/misc/bin
 def outdir(redshift, hden, temp, tdir="ion_out"):
     """Get the directory for output, and make sure it exists"""
     true_outdir= path.join(tdir,"zz"+str(redshift))
-    paramdir = path.join("h"+str(hden),"T"+str(temp))
+    if hden < 1.e-3:
+        paramdir = path.join("h0.0","T"+str(temp))
+    else:
+        paramdir = path.join("h"+str(hden),"T"+str(temp))
     real_outdir = path.join(true_outdir, paramdir)
     try:
         os.makedirs(real_outdir)
