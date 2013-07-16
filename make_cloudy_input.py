@@ -124,8 +124,8 @@ def outdir(redshift, hden, temp, tdir="ion_out"):
 
 def gen_redshift(rredshift):
     """Function for generating tables at a particular redshift"""
-    for hhden in np.arange(-6.,4.,0.2):
-        for ttemp in np.arange(3.,8.1,0.1):
+    for hhden in np.arange(-7.,4.,0.2):
+        for ttemp in np.arange(3.,8.6,0.05):
             ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp)
             infile = path.join(ooutdir, "cloudy_param")
             if not path.exists(path.join(ooutdir, "ionization.dat")):

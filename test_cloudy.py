@@ -57,6 +57,6 @@ def do_tests(tests, atten=True,cdir="ion_out"):
     print "Max dev: ",maxd, "max abs dev: ",maxad
 
 if __name__ == "__main__":
-    tests = [TestCase(-1.035,4.43), TestCase(-2.43,5.77), TestCase(1.64,4.12)]
+    tests = [TestCase(-1.035,4.43), TestCase(-1.035, 4.4), TestCase(-2.43,5.77), TestCase(1.64,4.12), TestCase(0.52, 4.22), TestCase(-1.43, 4.26)]
     do_tests(tests)
     do_tests(tests, False, "ion_out_no_atten")
