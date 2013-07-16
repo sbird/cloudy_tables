@@ -143,15 +143,20 @@ class CloudyTable:
         Returns the fraction of this ion in the species
         """
         cspe = self.species.index(species)
+        #raise exception if too far outside grid
+        if np.log10(np.max(rho)) > np.max(self.dens)+0.2:
+            raise ValueError("Density "+str(np.max(rho))+" larger than allowed")
+        if np.log10(np.min(rho)) < np.min(self.dens)-0.2:
+            raise ValueError("Density "+str(np.min(rho))+" smaller than allowed")
+        if np.log10(np.max(temp)) > np.max(self.temp)+0.2:
+            raise ValueError("Temperature "+str(np.max(temp))+" larger than allowed")
+        if np.log10(np.min(temp)) < np.min(self.temp)-0.2:
+            raise ValueError("Temperature "+str(np.min(temp))+" smaller than allowed")
         #Grid coords.
         crho = (np.log10(rho)-self.dens[0])*(np.size(self.dens)-1)/(self.dens[-1]-self.dens[0])
         ctemp = (np.log10(temp)-self.temp[0])*(np.size(self.temp)-1)/(self.temp[-1]-self.temp[0])
         coords = np.vstack((crho, ctemp))
         #mode = nearest handles points outside the grid - they get put onto the nearest grid point
-        if crho > np.max(self.dens)+0.2 or crho < np.min(self.dens)-0.2:
-            raise ValueError("Density outside of allowed values")
-        if ctemp > np.max(self.temp)+0.1 or ctemp < np.min(self.temp)-0.1:
-            raise ValueError("Temperature outside of allowed values")
         ions = map_coordinates(self.red_table[:,:,cspe,ion-1],coords, mode='nearest')
         return 10**ions
 
