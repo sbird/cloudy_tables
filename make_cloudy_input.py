@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Generate parameter files for cloudy, then run cloudy a number of times to generate a folder tree of files"""
 import os.path as path
 import numpy as np
@@ -30,6 +31,79 @@ class UVBAtten(cold_gas.RahmatiRT):
         #Doing this right is really too complicated.
         return np.log10(self.photo_rate(10**hden, 10**temp)/self.gamma_UVB)
 
+def broad(lambda_X, gamma_X):
+    """Natural broadening parameter, a, for a line.
+    This is computed by taking the Voigt profile in the limit that doppler broadening is zero,
+    then multiplying by λ_D/λ_X, where λ_D is the Doppler broadening parameter.
+    Thus we have a' = λ_X Γ_X/ 4π c
+    Arguments:
+    lambda_X - transitions wavelength in m
+    gamma_X - transition probability in Hz
+    """
+    return (lambda_X * gamma_X)/(4*math.pi*2.9979e8)
+
+def profile(ll, lambda_X, gamma_X):
+    """Return a Lorenztian profile evaluated at frequencies ll for a transition at lambda_X,
+    normalized to be unity at the deepest point, ie, when ll == lambda_X."""
+    xx = (ll - lambda_X)/lambda_X
+    aa = broad(lambda_X, gamma_X)
+    return aa**2/(xx**2+aa**2)
+
+def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
+    """
+    Generate the cloudy input string from a UVB table, with some more physical attenuation.
+    Assume that the gas is optically thick only to HI and HeI, as all other species are a
+    factor of 10^4 less abundant. Neglect H2 absorption.
+
+    The attenuation is that calculated by Rahmati 2012. This was only calculated for H Lya, so for
+    other lines we scale the attenuation with the optical depth. The optical depth goes like (for fixed columns):
+    τ ~ σ_X n
+    so for other transitions model the change in cross-section by adjusting the density to get the same τ.
+    So compute attenuation at new density n' = n (σ_X'/σ_X) = n /(λ_X' / λ_X) (f^osc_X'/f^osc_X)
+    This is not really right - it neglects the fact that the transition rates are also getting smaller,
+    which will make for less self-shielding from these lines.
+
+    Ly-beta is about a factor of 5 smaller in x-section, ly-gamma another.
+    Higher order transition rates are also smaller, making the line less broad, and
+    fewer relevant metal transitions are at higher energies.
+
+    Then the effect is moved to densities rather near the star-forming regime, where we are less confident,
+    and our quick approximation becomes increasingly bad.
+    Because of CIE at these densities all we really want is the right number of free electrons, which we
+    get by having the HI and HeI fractions right.
+
+    So we just cut the UVB from Lya, lyb and He Lya, and assume everything else does not
+    significantly attenuate the UVB.
+
+    The profile around each shielded transition is Lorentzian, for a DLA in the naturally broadened limit.
+
+    Note Rydberg = 1/wavelength.
+    """
+    UVB = UVBAtten(redshift)
+    #Calculate the profile of absorption from HI Lya data from VPFIT.
+    lya_prof = uvb_table[:,1]*(1-UVB.atten(hden, temp))*profile(1./uvb_table[:,0], 1215.6701*1e-10, 6.265e8)
+    #Do Ly-beta: cross-section
+    sbeta = (1025.7223*0.07912)/(1215.6701*0.4164)
+    lyb_prof = uvb_table[:,1]*(1-UVB.atten(hden*sbeta, temp))*profile(1./uvb_table[:,0], 1025.7223*1e-10, 1.897e8)
+    #Now calculate the profile of absorption from He Lya: data again from VPFIT.
+    saHe = (584.334*0.285)/(1215.6701*0.4164)
+    lyaHe_prof = uvb_table[:,1]*(1-UVB.atten(hden*saHe, temp))*profile(1./uvb_table[:,0], 584.334*1e-10, 2e8)
+    #Compute adjusted UVB table
+    uvb_table[:,1] -= (lya_prof+lyb_prof+lyaHe_prof)
+    #First output very small background at low energies
+    uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
+    uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
+    #Then output main body
+    for xx in xrange(np.shape(uvb_table)[0]):
+        uvb_str+="continue ("+str(uvb_table[xx,0])+" , "+str(uvb_table[xx,1])+" )\n"
+    #Then output zero background at high energies
+    uvb_str+="continue ("+str(uvb_table[-1,0]*1.0001)+" , -35.0 )\n"
+    uvb_str+="continue ( 7354000.0 , -35.0 ) \n"
+    #That was the UVB shape, now print the amplitude
+    uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
+    return uvb_str
+
+
 def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
     """Generate the cloudy input string from a UVB table"""
     UVB = UVBAtten(redshift)
@@ -49,7 +123,7 @@ def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
         uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
 
-def output_cloudy_config(redshift, hden, metals, temp, atten=True, tdir="ion_out",outfile="cloudy_param.in"):
+def output_cloudy_config(redshift, hden, metals, temp, atten=1, tdir="ion_out",outfile="cloudy_param.in"):
     """Generate a cloudy config file with the given options, in directory outdir/zz(redshift)"""
 
     real_outdir = outdir(redshift, hden, temp, tdir)
@@ -66,7 +140,11 @@ iterate to convergence
 
     #Get the UVB table
     uvb_table = load_uvb_table(redshift)
-    uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp,atten)
+    if atten < 2:
+        uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp,atten)
+    else:
+        uvb_str = gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp)
+
     #Print UVB
     out.write(uvb_str)
     #Print output options
