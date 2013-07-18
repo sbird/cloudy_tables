@@ -44,15 +44,19 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     waveuvb = 911.8/uvb_table[:,0]
     #Attenuate uniformly the part of the UVB between Lya and the Lyman limit for H
     profile = np.zeros_like(uvb_table[:,0])
-    ind = np.where((waveuvb < 1220)*(waveuvb > 900))
+    ind = np.where((waveuvb <= 1280)*(waveuvb > 800))
     profile[ind]=1.
+    #Make sure one past the Lyman limit is actually damped
+    profile[ind[0][-1]+1]=1.
     #Compute adjusted UVB table
-    uvb_table[:,1] -= np.log10(UVB.atten(hden, temp))*profile
+    uvb_table[:,1] += np.log10(UVB.atten(hden, temp))*profile
     #Attenuation for He
     profile = np.zeros_like(uvb_table[:,0])
-    ind = np.where((waveuvb < 590)*(waveuvb > 510))
+    ind = np.where((waveuvb < 650)*(waveuvb > 510))
     profile[ind]=1.
-    uvb_table[:,1] -= np.log10(UVB.atten(hden-np.log10(3), temp))*profile
+    #Make sure one past the Lyman limit is actually damped
+    profile[ind[0][-1]+1]=1.
+    uvb_table[:,1] += np.log10(UVB.atten(hden, temp))*profile
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
