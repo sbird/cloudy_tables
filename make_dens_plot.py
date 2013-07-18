@@ -12,8 +12,7 @@ import os.path as path
 import numpy as np
 from save_figure import save_figure
 
-base="/home/spb/scratch/Cosmo/"
-outdir = base + "plots/"
+outdir = "testplots/"
 print "Plots at: ",outdir
 
 def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
