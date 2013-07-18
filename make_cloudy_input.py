@@ -74,12 +74,13 @@ def profile(ll, lambda_X, gamma_X, fosc_X, hden):
     xx = (ll - lambda_X)/lambda_X
     ss = sigma_X(lambda_X, fosc_X)
     #Column density: characteristic length of each particle is assumed to be 1 kpc/h.
-    cdd = hden*3.1e21/0.7
+    #Note hden is given in log([1/cm^3])
+    cdd = 10**hden*1e6*3.1e19/0.7
 
     tau = ss*cdd*aa/(xx**2+aa**2)/math.pi**1.5
 
-    f0 = 1-np.exp(ss*cdd/aa/math.pi**1.5)
-    flux = (1-np.exp(tau))/f0
+    f0 = 1-np.exp(-ss*cdd/aa/math.pi**1.5)
+    flux = (1-np.exp(-tau))/f0
     return flux
 
 def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
