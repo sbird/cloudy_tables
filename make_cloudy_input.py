@@ -126,7 +126,9 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     saHe = (584.334*0.285)/(1215.6701*0.4164)
     lyaHe_prof = origuvb*(1-UVB.atten(hden*saHe, temp))*profile(waveuvb, 584.334*1e-10, 2e8, 0.285, hden)
     #Compute adjusted UVB table
-    uvb_table[:,1] = np.log10(origuvb - (lya_prof+lyb_prof+lyaHe_prof))
+    subuvb = origuvb - (lya_prof+lyb_prof+lyaHe_prof)
+    subuvb[np.where(subuvb < 1.e-35)] = 1.e-35
+    uvb_table[:,1] = np.log10(subuvb)
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
