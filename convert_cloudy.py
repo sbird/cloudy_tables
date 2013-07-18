@@ -109,8 +109,8 @@ class CloudyTable:
         """Read a cloudy table from somewhere"""
         self.savefile = path.join(directory,"cloudy_table.npz")
         self.reds = np.arange(2,5)
-        self.dens = np.arange(-6,4,0.2)
-        self.temp = np.arange(3,8.0, 0.1)
+        self.dens = np.arange(-7,4,0.2)
+        self.temp = np.arange(3,8.6, 0.05)
         self.species = ("H", "He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
         #Solar abundances from Hazy table 7.1 as Z = n/n(H)
         self.solar = np.array([1, 0.1, 2.45e-4, 8.51e-5, 4.9e-4, 1.e-4, 3.47e-5, 3.47e-5, 2.82e-5])
