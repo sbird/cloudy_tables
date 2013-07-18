@@ -16,17 +16,19 @@ base="/home/spb/scratch/Cosmo/"
 outdir = base + "plots/"
 print "Plots at: ",outdir
 
-def plot_SivsHI(temp = 3e4, atten=True, elem="Si", ion=2):
+def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
     """
         Plot the SiII fraction as a function of density, for some temperature.
         temp is an array, in K.
     """
     if np.size(temp) == 1:
         temp = np.array([temp,])
-    if atten:
+    if atten == 1:
         tab = cc.CloudyTable(3)
+    elif atten == 2:
+        tab = cc.CloudyTable(3, "ion_out_fancy_atten")
     else:
-        tab = cc.CloudyTable(3, "../spb_common/ion_out_no_atten")
+        tab = cc.CloudyTable(3, "ion_out_no_atten")
 
     #The hydrogen density in atoms/cm^3
     dens = np.logspace(-5,2,100)
@@ -47,13 +49,20 @@ def plot_SivsHI(temp = 3e4, atten=True, elem="Si", ion=2):
     plt.xlabel(r"$\rho_\mathrm{H}\; (\mathrm{amu}/\mathrm{cm}^3$)")
     plt.ylabel(r"$\mathrm{m}_\mathrm{SiII} / \mathrm{m}_\mathrm{Si}$")
     plt.show()
-    if atten:
+    if atten == 1:
         save_figure(path.join(outdir,elem+"_fracs"))
+    elif atten == 2:
+        save_figure(path.join(outdir,elem+"_fracs_fancy_atten"))
     else:
         save_figure(path.join(outdir,elem+"_fracs_no_atten"))
     plt.clf()
 
-plot_SivsHI([1e4, 2e4, 3e4])
-plot_SivsHI([1e4, 2e4, 3e4], False)
-plot_SivsHI([1e4, 2e4, 3e4], True, "He", 1)
-plot_SivsHI([1e4, 2e4, 3e4], False, "He", 1)
+plot_SivsHI([1e4, 2e4, 3e4], 1)
+plot_SivsHI([1e4, 2e4, 3e4], 0)
+plot_SivsHI([1e4, 2e4, 3e4], 2)
+plot_SivsHI([1e4, 2e4, 3e4], 1, "He", 1)
+plot_SivsHI([1e4, 2e4, 3e4], 0, "He", 1)
+plot_SivsHI([1e4, 2e4, 3e4], 2, "He", 1)
+plot_SivsHI([1e4, 2e4, 3e4], 1, "H", 1)
+plot_SivsHI([1e4, 2e4, 3e4], 0, "H", 1)
+plot_SivsHI([1e4, 2e4, 3e4], 2, "H", 1)

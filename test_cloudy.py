@@ -16,7 +16,7 @@ class TestCase:
         self.redshift = redshift
         self.species = ("H", "He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
 
-    def make_table(self, atten=True, tdir="ion_out"):
+    def make_table(self, atten, tdir="ion_out"):
         """Make the test cases"""
         ooutdir = mc.output_cloudy_config(self.redshift, self.dens, self.met, self.temp, atten, path.join(tdir,"test"))
         infile = path.join(ooutdir, "cloudy_param")
@@ -29,7 +29,7 @@ class TestCase:
         cspe = self.species.index(element)
         return 10**self.table[cspe, ionn-1]
 
-def do_tests(tests, atten=True,cdir="ion_out"):
+def do_tests(tests, atten=2,cdir="ion_out"):
     clou = cc.CloudyTable(3, cdir)
     ions = {"Si":2, "C":4, "O":6, "He":1}
     maxd = 0.
@@ -58,5 +58,9 @@ def do_tests(tests, atten=True,cdir="ion_out"):
 
 if __name__ == "__main__":
     tests = [TestCase(-1.035,4.43), TestCase(-1.035, 4.4), TestCase(-2.43,5.77), TestCase(1.64,4.12), TestCase(0.52, 4.22), TestCase(-1.43, 4.26)]
-    do_tests(tests)
-    do_tests(tests, False, "ion_out_no_atten")
+    print "==Uniform UVB attenuation=="
+    do_tests(tests,1)
+    print "==No UVB attenuation=="
+    do_tests(tests, 0, "ion_out_no_atten")
+    print "==Fancy UVB attenuation around Lya=="
+    do_tests(tests, 2, "ion_out_fancy_atten")
