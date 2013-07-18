@@ -7,6 +7,7 @@ import subprocess
 import os
 import multiprocessing as mp
 import cold_gas
+from scipy.interpolate import interp1d
 
 def load_uvb_table(redshift, uvb_path="UVB_tables"):
     """Load one of Claude's UVB tables, and convert to Cloudy units"""
@@ -115,18 +116,23 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     with wavelength 91.18 nm.
     """
     UVB = UVBAtten(redshift)
-    origuvb = 10**uvb_table[:,1]
-    waveuvb = 91.18e-9/uvb_table[:,0]
+    #Subsample the UVB so we have more points around the regions we care about
+    intuvb = interp1d(uvb_table[:,0], uvb_table[:,1])
+    newuvb = np.append(uvb_table[:,0], 91.18e-9/(1100+np.arange(0,200,10)))
+    newuvb = np.append(newuvb, 91.18e-9/(520+np.arange(0,100,10)))
+    newuvb = np.sort(newuvb)
+    origuvb = 10**intuvb(newuvb)
+    waveuvb = 91.18e-9/newuvb
     #Calculate the profile of absorption from HI Lya data from VPFIT.
     lya_prof = origuvb*(1-UVB.atten(hden, temp))*profile(waveuvb, 1215.6701*1e-10, 6.265e8, 0.4164, hden)
     #Do Ly-beta: cross-section
-    sbeta = (1025.7223*0.07912)/(1215.6701*0.4164)
-    lyb_prof = origuvb*(1-UVB.atten(hden*sbeta, temp))*profile(waveuvb, 1025.7223*1e-10, 1.897e8, 0.079129, hden)
+    #sbeta = (1025.7223*0.07912)/(1215.6701*0.4164)
+    #lyb_prof = origuvb*(1-UVB.atten(hden*sbeta, temp))*profile(waveuvb, 1025.7223*1e-10, 1.897e8, 0.079129, hden)
     #Now calculate the profile of absorption from He Lya: data again from VPFIT.
     saHe = (584.334*0.285)/(1215.6701*0.4164)
     lyaHe_prof = origuvb*(1-UVB.atten(hden*saHe, temp))*profile(waveuvb, 584.334*1e-10, 2e8, 0.285, hden)
     #Compute adjusted UVB table
-    subuvb = origuvb - (lya_prof+lyb_prof+lyaHe_prof)
+    subuvb = origuvb - (lya_prof+lyaHe_prof)
     subuvb[np.where(subuvb < 1.e-35)] = 1.e-35
     uvb_table[:,1] = np.log10(subuvb)
     #First output very small background at low energies
