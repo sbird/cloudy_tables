@@ -42,12 +42,45 @@ def broad(lambda_X, gamma_X):
     """
     return (lambda_X * gamma_X)/(4*math.pi*2.9979e8)
 
-def profile(ll, lambda_X, gamma_X):
-    """Return a Lorenztian profile evaluated at frequencies ll for a transition at lambda_X,
-    normalized to be unity at the deepest point, ie, when ll == lambda_X."""
-    xx = (ll - lambda_X)/lambda_X
+def sigma_X(lambda_X, fosc_X):
+    """The cross-section of the absorption transition, in m^2.
+       This is the sqrt of the Thompson cross-section for the photon times the x-section of the transition.
+    """
+    sigma_T = 6.652458558e-29 #Thompson cross-section in m^2
+    return np.sqrt(3.0*math.pi/8.0*sigma_T)*lambda_X*fosc_X
+
+def profile(ll, lambda_X, gamma_X, fosc_X, hden):
+    """The profile for the absorption we assume to be Lorentzian, in the limit where there is no
+    thermal broadening of the line.
+
+    To compute it, we use F(l) = F_0 (1 - exp(-τ)), where F_0 is chosen so that the profile
+    is unity at the transition, its maximal point.
+
+    The optical depth, τ is given by
+    τ = (σ_X c N) / (sqrt{π} b) H(a,x)
+    where H(a,x) is the Voigt profile.
+    In the limit where T-> 0, the thermal parameter, b-> 0, and the Voigt profile becomes:
+
+    H(a, x) = (b/c) α / (π ( ζ^2 + α^2))
+
+    where α = λ_i Γ_i / (4 π c) and ζ = (λ - λ_i) / λ_i
+
+    Then we have
+
+    τ = σ_X N α / (π^(3/2) ( ζ^2 + α^2))
+
+    """
     aa = broad(lambda_X, gamma_X)
-    return aa**2/(xx**2+aa**2)
+    xx = (ll - lambda_X)/lambda_X
+    ss = sigma_X(lambda_X, fosc_X)
+    #Column density: characteristic length of each particle is assumed to be 1 kpc/h.
+    cdd = hden*3.1e21/0.7
+
+    tau = ss*cdd*aa/(xx**2+aa**2)/math.pi**1.5
+
+    f0 = 1-np.exp(ss*cdd/aa/math.pi**1.5)
+    flux = (1-np.exp(tau))/f0
+    return flux
 
 def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     """
@@ -84,16 +117,15 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     origuvb = 10**uvb_table[:,1]
     waveuvb = 91.18e-9/uvb_table[:,0]
     #Calculate the profile of absorption from HI Lya data from VPFIT.
-    lya_prof = origuvb*(1-UVB.atten(hden, temp))*profile(waveuvb, 1215.6701*1e-10, 6.265e8)
+    lya_prof = origuvb*(1-UVB.atten(hden, temp))*profile(waveuvb, 1215.6701*1e-10, 6.265e8, 0.4164, hden)
     #Do Ly-beta: cross-section
     sbeta = (1025.7223*0.07912)/(1215.6701*0.4164)
-    lyb_prof = origuvb*(1-UVB.atten(hden*sbeta, temp))*profile(waveuvb, 1025.7223*1e-10, 1.897e8)
+    lyb_prof = origuvb*(1-UVB.atten(hden*sbeta, temp))*profile(waveuvb, 1025.7223*1e-10, 1.897e8, 0.079129, hden)
     #Now calculate the profile of absorption from He Lya: data again from VPFIT.
     saHe = (584.334*0.285)/(1215.6701*0.4164)
-    lyaHe_prof = origuvb*(1-UVB.atten(hden*saHe, temp))*profile(waveuvb, 584.334*1e-10, 2e8)
+    lyaHe_prof = origuvb*(1-UVB.atten(hden*saHe, temp))*profile(waveuvb, 584.334*1e-10, 2e8, 0.285, hden)
     #Compute adjusted UVB table
     uvb_table[:,1] = np.log10(origuvb - (lya_prof+lyb_prof+lyaHe_prof))
-    raise Exception
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
