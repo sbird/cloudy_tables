@@ -29,7 +29,7 @@ class UVBAtten(cold_gas.RahmatiRT):
         #Note: the UVB is not attentuated at high hydrogen densities.
         #It should only be attenuated for a particular frequency band around 1217 A.
         #Doing this right is really too complicated.
-        return np.log10(self.photo_rate(10**hden, 10**temp)/self.gamma_UVB)
+        return self.photo_rate(10**hden, 10**temp)/self.gamma_UVB
 
 def broad(lambda_X, gamma_X):
     """Natural broadening parameter, a, for a line.
@@ -77,19 +77,23 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
 
     The profile around each shielded transition is Lorentzian, for a DLA in the naturally broadened limit.
 
-    Note Rydberg = 1/wavelength.
+    Note Rydberg ~ 1/wavelength, and 1 Rydberg is the energy of a photon at the Lyman limit, ie,
+    with wavelength 91.18 nm.
     """
     UVB = UVBAtten(redshift)
+    origuvb = 10**uvb_table[:,1]
+    waveuvb = 91.18e-9/uvb_table[:,0]
     #Calculate the profile of absorption from HI Lya data from VPFIT.
-    lya_prof = uvb_table[:,1]*(1-UVB.atten(hden, temp))*profile(1./uvb_table[:,0], 1215.6701*1e-10, 6.265e8)
+    lya_prof = origuvb*(1-UVB.atten(hden, temp))*profile(waveuvb, 1215.6701*1e-10, 6.265e8)
     #Do Ly-beta: cross-section
     sbeta = (1025.7223*0.07912)/(1215.6701*0.4164)
-    lyb_prof = uvb_table[:,1]*(1-UVB.atten(hden*sbeta, temp))*profile(1./uvb_table[:,0], 1025.7223*1e-10, 1.897e8)
+    lyb_prof = origuvb*(1-UVB.atten(hden*sbeta, temp))*profile(waveuvb, 1025.7223*1e-10, 1.897e8)
     #Now calculate the profile of absorption from He Lya: data again from VPFIT.
     saHe = (584.334*0.285)/(1215.6701*0.4164)
-    lyaHe_prof = uvb_table[:,1]*(1-UVB.atten(hden*saHe, temp))*profile(1./uvb_table[:,0], 584.334*1e-10, 2e8)
+    lyaHe_prof = origuvb*(1-UVB.atten(hden*saHe, temp))*profile(waveuvb, 584.334*1e-10, 2e8)
     #Compute adjusted UVB table
-    uvb_table[:,1] -= (lya_prof+lyb_prof+lyaHe_prof)
+    uvb_table[:,1] = np.log10(origuvb - (lya_prof+lyb_prof+lyaHe_prof))
+    raise Exception
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
@@ -118,7 +122,7 @@ def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
     uvb_str+="continue ( 7354000.0 , -35.0 ) \n"
     #That was the UVB shape, now print the amplitude
     if atten:
-        uvb_str+="f(nu)="+str(uvb_table[0,1]+UVB.atten(hden,temp))+" at "+str(uvb_table[0,0])+" Ryd\n"
+        uvb_str+="f(nu)="+str(uvb_table[0,1]+np.log10(UVB.atten(hden,temp)))+" at "+str(uvb_table[0,0])+" Ryd\n"
     else:
         uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
