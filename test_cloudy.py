@@ -31,7 +31,7 @@ class TestCase:
 
 def do_tests(tests, atten=2,cdir="ion_out"):
     clou = cc.CloudyTable(3, cdir)
-    ions = {"Si":2, "C":4, "O":6, "He":1}
+    ions = {"H":1, "Si":2, "C":4, "O":6, "He":1}
     maxd = 0.
     maxad = 0.
     for test in tests:
