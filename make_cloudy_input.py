@@ -171,11 +171,11 @@ def gen_redshift(rredshift):
     """Function for generating tables at a particular redshift"""
     for hhden in np.arange(-7.,4.,0.2):
         for ttemp in np.arange(3.,8.6,0.05):
-            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp)
+            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,1,"ion_out")
             infile = path.join(ooutdir, "cloudy_param")
             if not path.exists(path.join(ooutdir, "ionization.dat")):
                 subprocess.call(['./cloudy.exe', '-r', infile])
 
 if __name__ == "__main__":
     pool = mp.Pool(processes=3)
-    pool.map(gen_redshift,[4,3,2])
+    pool.map(gen_redshift,[4,3,2,1,0])

@@ -108,7 +108,7 @@ class CloudyTable:
     def __init__(self, redshift, directory=cloudy_dir):
         """Read a cloudy table from somewhere"""
         self.savefile = path.join(directory,"cloudy_table.npz")
-        self.reds = np.arange(2,5)
+        self.reds = np.arange(0,5)
         self.dens = np.arange(-7,4,0.2)
         self.temp = np.arange(3,8.6, 0.05)
         self.species = ("H", "He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
@@ -123,8 +123,6 @@ class CloudyTable:
         self.directory = directory
         #Set up interpolation objects
         #Redshift is first axis.
-        if redshift < 2.0 and redshift > 1.9:
-            redshift = 2.0
         #Floating point roundoff taking this out of the integration boundary
         if redshift < 4.1 and redshift > 4.0:
             redshift = 4.0
