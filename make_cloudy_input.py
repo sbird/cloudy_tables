@@ -7,7 +7,6 @@ import subprocess
 import os
 import multiprocessing as mp
 import cold_gas
-from scipy.interpolate import interp1d
 
 def load_uvb_table(redshift, uvb_path="UVB_tables"):
     """Load one of Claude's UVB tables, and convert to Cloudy units"""
@@ -35,27 +34,17 @@ class UVBAtten(cold_gas.RahmatiRT):
 def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     """
     Generate the cloudy input string from a UVB table, with slightly more physical attenuation.
-    Attenuate uniformly (following the Rahmati prescription) only the regions
-    between Lya and the Lyman limit for H and He. For He, divide the density by 3, as He is 1/3 as abundant.
+    Attenuate uniformly (following the Rahmati prescription) all photons at higher energy than Lyman alpha.
     Note Rydberg ~ 1/wavelength, and 1 Rydberg is the energy of a photon at the Lyman limit, ie,
     with wavelength 911.8 Angstrom.
     """
     UVB = UVBAtten(redshift)
     waveuvb = 911.8/uvb_table[:,0]
-    #Attenuate uniformly the part of the UVB between Lya and the Lyman limit for H
+    #Attenuate uniformly the part of the UVB above Lya
     profile = np.zeros_like(uvb_table[:,0])
-    ind = np.where((waveuvb <= 1280)*(waveuvb > 800))
+    ind = np.where((waveuvb < 1280))
     profile[ind]=1.
-    #Make sure one past the Lyman limit is actually damped
-    profile[ind[0][-1]+1]=1.
     #Compute adjusted UVB table
-    uvb_table[:,1] += np.log10(UVB.atten(hden, temp))*profile
-    #Attenuation for He
-    profile = np.zeros_like(uvb_table[:,0])
-    ind = np.where((waveuvb < 650)*(waveuvb > 510))
-    profile[ind]=1.
-    #Make sure one past the Lyman limit is actually damped
-    profile[ind[0][-1]+1]=1.
     uvb_table[:,1] += np.log10(UVB.atten(hden, temp))*profile
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
