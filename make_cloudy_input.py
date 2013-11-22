@@ -89,6 +89,7 @@ def output_cloudy_config(redshift, hden, metals, temp, atten=1, tdir="ion_out",o
 no induced processes                    #to follow Wiersma et al.
 stop zone 1
 iterate to convergence
+abundances GASS10
 #no free free
 #no collisional ionization
 #no Compton effect\n"""
