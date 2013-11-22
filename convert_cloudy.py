@@ -112,8 +112,8 @@ class CloudyTable:
         self.dens = np.arange(-7,4,0.2)
         self.temp = np.arange(3,8.6, 0.05)
         self.species = ("H", "He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
-        #Solar abundances from Hazy table 7.1 as Z = n/n(H)
-        self.solar = np.array([1, 0.1, 2.45e-4, 8.51e-5, 4.9e-4, 1.e-4, 3.47e-5, 3.47e-5, 2.82e-5])
+        #Solar abundances from Asplund 2009 / Grevasse 2010 (which is used in Cloudy 13, Hazy Table 7.3).
+        self.solar = {"H":1, "He":0.1, "C":3.55e-4,"N":9.33e-4,"O":7.41e-5,"Ne":1.17e-4,"Mg":3.8e-5,"Si":3.55e-5,"Fe":3.24e-5}
         try:
             datafile = np.load(self.savefile)
             self.table = datafile["table"]
