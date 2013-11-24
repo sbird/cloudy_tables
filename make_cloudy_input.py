@@ -108,8 +108,7 @@ abundances GASS10
     out.write("hden "+str(hden)+" log\n")
     out.write("metals "+str(metals)+" log\n")
     out.write("constant temperature "+str(temp)+" log\n")
-    ionsave = path.join(real_outdir,"ionization.dat")
-    out.write("save last ionization means \""+ionsave+"\"\n")
+    out.write("save last ionization means \"ionization.dat\"\n")
     return real_outdir
 
 
@@ -161,11 +160,21 @@ def gen_redshift(rredshift):
     """Function for generating tables at a particular redshift"""
     for hhden in np.arange(-7.,4.,0.2):
         for ttemp in np.arange(3.,8.6,0.05):
-            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,1,"ion_out")
+            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,2,"ion_out_fancy_atten")
             infile = path.join(ooutdir, "cloudy_param")
             if not path.exists(path.join(ooutdir, "ionization.dat")):
                 subprocess.call(['./cloudy.exe', '-r', infile])
 
+def gen_density(hhden):
+    """Generate tables at given density"""
+    for rredshift in [4,3,2,1,0]:
+        for ttemp in np.arange(3.,8.6,0.05):
+            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,2,"ion_out_fancy_atten")
+            cloudy_exe = path.join(os.getcwd(),"cloudy.exe")
+            if not path.exists(path.join(ooutdir, "ionization.dat")):
+                subprocess.call([cloudy_exe, '-r', "cloudy_param"],cwd=ooutdir)
+
+
 if __name__ == "__main__":
-    pool = mp.Pool(processes=3)
-    pool.map(gen_redshift,[4,3,2,1,0])
+    pool = mp.Pool(processes=8)
+    pool.map(gen_density,np.arange(-7.,4.,0.2))
