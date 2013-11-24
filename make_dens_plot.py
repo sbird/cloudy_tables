@@ -46,7 +46,8 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
         plt.semilogx(dens, fracSi, color="green",ls=ls.pop())
 
     plt.xlabel(r"$\rho_\mathrm{H}\; (\mathrm{amu}/\mathrm{cm}^3$)")
-    plt.ylabel(r"$\mathrm{m}_\mathrm{SiII} / \mathrm{m}_\mathrm{Si}$")
+    plt.ylabel(r"$\mathrm{m}_\mathrm{"+elem+str(ion)+"} / \mathrm{m}_\mathrm{"+elem+"}$")
+    plt.ylim(0,1)
     plt.show()
     if atten == 1:
         save_figure(path.join(outdir,elem+"_fracs"))
