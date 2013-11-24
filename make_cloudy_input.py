@@ -42,7 +42,7 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     waveuvb = 911.8/uvb_table[:,0]
     #Attenuate uniformly the part of the UVB above Lya
     profile = np.zeros_like(uvb_table[:,0])
-    ind = np.where((waveuvb < 1280))
+    ind = np.where((waveuvb < 930))
     profile[ind]=1.
     #Compute adjusted UVB table
     uvb_table[:,1] += np.log10(UVB.atten(hden, temp))*profile
