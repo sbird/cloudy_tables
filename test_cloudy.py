@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Test the accuracy of the interpolation onto the cloudy grid"""
+import os
 import os.path as path
 import subprocess
 import numpy as np
@@ -20,8 +21,9 @@ class TestCase:
         """Make the test cases"""
         ooutdir = mc.output_cloudy_config(self.redshift, self.dens, self.met, self.temp, atten, path.join(tdir,"test"))
         infile = path.join(ooutdir, "cloudy_param")
+        cloudy_exe = path.join(os.getcwd(),"cloudy.exe")
         if not path.exists(path.join(ooutdir, "ionization.dat")):
-            subprocess.call(['./cloudy.exe', '-r', infile])
+            subprocess.call([cloudy_exe, '-r', "cloudy_param"],cwd=ooutdir)
         self.table = cc.convert_single_file(path.join(ooutdir, "ionization.dat"))
 
     def get_ion(self, element, ionn):
