@@ -9,7 +9,7 @@ from scipy.ndimage import map_coordinates
 
 #Max number of ion species to count
 nions = 17
-cloudy_dir = path.join(path.dirname(__file__),"ion_out/")
+cloudy_dir = path.join(path.dirname(__file__),"ion_out_fancy_atten/")
 
 def handle_single_line(splitline):
     """Short function to handle a single cloudy line, split by whitespace, and deal with lack of spaces"""
