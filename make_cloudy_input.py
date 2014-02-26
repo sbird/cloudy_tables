@@ -5,6 +5,7 @@ import numpy as np
 import math
 import subprocess
 import os
+import photocs
 import multiprocessing as mp
 import cold_gas
 
@@ -39,11 +40,11 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     with wavelength 911.8 Angstrom.
     """
     UVB = UVBAtten(redshift)
-    waveuvb = 911.8/uvb_table[:,0]
-    #Attenuate uniformly the part of the UVB above Lya
-    profile = np.zeros_like(uvb_table[:,0])
-    ind = np.where((waveuvb < 930))
-    profile[ind]=1.
+    #Attenuate the UVB by an amount dependent on the hydrogen
+    #photoionisation cross-section.
+    #This is zero for energies less than 13.6 eV = 1 Ryd, and then falls off like E^-3
+    #Normalise the profile in terms of 1 Ryd, where the radiative transfer was calculated originally.
+    profile = photocs.hyd.photo(13.6*uvb_table[:,0])/photocs.hyd.photo(13.6)
     #Compute adjusted UVB table
     uvb_table[:,1] += np.log10(UVB.atten(hden, temp))*profile
     #First output very small background at low energies
@@ -169,7 +170,7 @@ def gen_density(hhden):
     """Generate tables at given density"""
     for rredshift in [4,3,2,1,0]:
         for ttemp in np.arange(3.,8.6,0.05):
-            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,2,"ion_out_fancy_atten")
+            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,2,"ion_out_photo_atten")
             cloudy_exe = path.join(os.getcwd(),"cloudy.exe")
             if not path.exists(path.join(ooutdir, "ionization.dat")):
                 subprocess.call([cloudy_exe, '-r', "cloudy_param"],cwd=ooutdir)
