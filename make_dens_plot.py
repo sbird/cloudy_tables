@@ -46,7 +46,7 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
         plt.semilogx(dens, fracSi, color="green",ls=ls.pop())
 
     plt.xlabel(r"$\rho_\mathrm{H}\; (\mathrm{amu}/\mathrm{cm}^3$)")
-    plt.ylabel(r"$\mathrm{m}_\mathrm{"+elem+str(ion)+"} / \mathrm{m}_\mathrm{"+elem+"}$")
+    plt.ylabel(r"$\mathrm{m}_\mathrm{"+elem+str(ion)+r"} / \mathrm{m}_\mathrm{"+elem+r"}$")
     plt.ylim(0,1)
     plt.show()
     if atten == 1:
@@ -66,3 +66,6 @@ plot_SivsHI([1e4, 2e4, 3e4], 2, "He", 1)
 plot_SivsHI([1e4, 2e4, 3e4], 1, "H", 1)
 plot_SivsHI([1e4, 2e4, 3e4], 0, "H", 1)
 plot_SivsHI([1e4, 2e4, 3e4], 2, "H", 1)
+plot_SivsHI([1e4, 2e4, 3e4], 1, "C", 4)
+plot_SivsHI([1e4, 2e4, 3e4], 0, "C", 4)
+plot_SivsHI([1e4, 2e4, 3e4], 2, "C", 4)
