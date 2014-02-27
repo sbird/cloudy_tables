@@ -46,7 +46,8 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     #Normalise the profile in terms of 1 Ryd, where the radiative transfer was calculated originally.
     profile = photocs.hyd.photo(13.6*uvb_table[:,0])/photocs.hyd.photo(13.6)
     #Compute adjusted UVB table
-    uvb_table[:,1] += np.log10(UVB.atten(hden, temp))*profile
+    ind = np.where(profile > 0)
+    uvb_table[ind,1] += np.log10(UVB.atten(hden, temp)*profile[ind])
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
