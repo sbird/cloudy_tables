@@ -24,30 +24,42 @@ class UVBAtten(cold_gas.RahmatiRT):
     """Attenuate the UVB using the self-shielding prescription of Rahmati 2013"""
 
     def atten(self,hden, temp):
-        """Compute the UVB attenuation factor at high densities.
-        Reduce the UVB intensity by the same factor that Rahmati
-        reduces the photoionisation rate by."""
-        #Note: the UVB is not attentuated at high hydrogen densities.
-        #It should only be attenuated for a particular frequency band around 1217 A.
-        #Doing this right is really too complicated.
+        """Compute the reduction in the photoionisation rate at an energy of 13.6 eV
+        at a given density and temperature, using the Rahmati fitting formula.
+        """
         return self.photo_rate(10**hden, 10**temp)/self.gamma_UVB
 
 def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     """
-    Generate the cloudy input string from a UVB table, with slightly more physical attenuation.
-    Attenuate uniformly (following the Rahmati prescription) all photons at higher energy than Lyman alpha.
+    Generate the cloudy input string from a UVB table, reducing the UVB amplitude at energies >= 13.6eV
+    by a self-shielding factor.
+
+    The self-shielding factor at 13.6 eV is given by the Rahmati fitting formula.
+    At higher energies the HI cross-section reduces like ν^-3.
+
+    Account for this by noting that self-shielding happens when τ = 1, ie
+    τ = n σ L = 1.
+    Thus a lower cross-section requires higher densities.
+    Assume then that HI self-shielding is really a function of τ, and thus at a frequency ν,
+    the self-shielding factor can be computed by working out the optical depth for the
+    equivalent density at 13.6 eV. ie, for Γ(n, T), account for frequency dependence with:
+
+    Γ( n / (σ(13.6) / σ(ν) ), T).
+
+    (so that a lower x-section leads to a lower effective density)
+
     Note Rydberg ~ 1/wavelength, and 1 Rydberg is the energy of a photon at the Lyman limit, ie,
     with wavelength 911.8 Angstrom.
     """
     UVB = UVBAtten(redshift)
     #Attenuate the UVB by an amount dependent on the hydrogen
-    #photoionisation cross-section.
+    #photoionisation cross-section for hydrogen as a function of frequency.
     #This is zero for energies less than 13.6 eV = 1 Ryd, and then falls off like E^-3
     #Normalise the profile in terms of 1 Ryd, where the radiative transfer was calculated originally.
-    profile = photocs.hyd.photo(13.6*uvb_table[:,0])/photocs.hyd.photo(13.6)
+    hics = photocs.hyd.photo(13.6*uvb_table[:,0])/photocs.hyd.photo(13.6)
     #Compute adjusted UVB table
-    ind = np.where(profile > 0)
-    uvb_table[ind,1] += np.log10(UVB.atten(hden, temp)*profile[ind])
+    ind = np.where(hics > 0)
+    uvb_table[ind,1] += np.log10(UVB.atten(hden+np.log10(hics[ind]), temp))
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
@@ -178,5 +190,5 @@ def gen_density(hhden):
 
 
 if __name__ == "__main__":
-    pool = mp.Pool(processes=8)
+    pool = mp.Pool(processes=32)
     pool.map(gen_density,np.arange(-7.,4.,0.2))
