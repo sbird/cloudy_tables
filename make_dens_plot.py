@@ -23,9 +23,11 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
     if np.size(temp) == 1:
         temp = np.array([temp,])
     if atten == 1:
-        tab = cc.CloudyTable(3)
+        tab = cc.CloudyTable(3, "ion_out")
     elif atten == 2:
         tab = cc.CloudyTable(3, "ion_out_fancy_atten")
+    elif atten == 3:
+        tab = cc.CloudyTable(3, "ion_out_photo_atten")
     else:
         tab = cc.CloudyTable(3, "ion_out_no_atten")
 
@@ -53,19 +55,14 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
         save_figure(path.join(outdir,elem+"_fracs"))
     elif atten == 2:
         save_figure(path.join(outdir,elem+"_fracs_fancy_atten"))
+    elif atten == 3:
+        save_figure(path.join(outdir,elem+"_fracs_photo_atten"))
     else:
         save_figure(path.join(outdir,elem+"_fracs_no_atten"))
     plt.clf()
 
-plot_SivsHI([1e4, 2e4, 3e4], 1)
-plot_SivsHI([1e4, 2e4, 3e4], 0)
-plot_SivsHI([1e4, 2e4, 3e4], 2)
-plot_SivsHI([1e4, 2e4, 3e4], 1, "He", 1)
-plot_SivsHI([1e4, 2e4, 3e4], 0, "He", 1)
-plot_SivsHI([1e4, 2e4, 3e4], 2, "He", 1)
-plot_SivsHI([1e4, 2e4, 3e4], 1, "H", 1)
-plot_SivsHI([1e4, 2e4, 3e4], 0, "H", 1)
-plot_SivsHI([1e4, 2e4, 3e4], 2, "H", 1)
-plot_SivsHI([1e4, 2e4, 3e4], 1, "C", 4)
-plot_SivsHI([1e4, 2e4, 3e4], 0, "C", 4)
-plot_SivsHI([1e4, 2e4, 3e4], 2, "C", 4)
+for atten in xrange(4):
+    plot_SivsHI([1e4, 2e4, 3e4], atten)
+    plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
+    plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
+    plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 4)
