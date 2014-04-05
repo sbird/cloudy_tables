@@ -66,3 +66,5 @@ for atten in xrange(4):
     plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 4)
+    plot_SivsHI([1e4, 2e4, 3e4], atten, "O", 6)
+    plot_SivsHI([1e4, 2e4, 3e4], atten, "Mg", 2)
