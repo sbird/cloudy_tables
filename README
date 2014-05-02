@@ -1,0 +1,11 @@
+Scripts for computing ionisation fractions from Cloudy ionisation tables.
+
+make_cloudy_input.py runs cloudy a number of times and creates the files
+in a directory structure. For this to work, you must have data for a UVB in UVB_Tables/
+and cloudy installed.
+
+convert_cloudy contains routines that generate ionisation fractions as a 
+function of temperature and density.
+The first time these routines are run they read and parse the ionisation tables generated
+by make_cloudy_input and save the results in cloudy_table.npz for ease of access. 
+
