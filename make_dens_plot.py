@@ -15,6 +15,22 @@ from save_figure import save_figure
 outdir = "testplots/"
 print "Plots at: ",outdir
 
+def romanise_num(num):
+    if num == 1:
+        return "I"
+    elif num == 2:
+        return "II"
+    elif num == 3:
+        return "III"
+    elif num == 4:
+        return "IV"
+    elif num == 5:
+        return "V"
+    elif num == 6:
+        return "VI"
+    else:
+        return str(num)
+
 def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
     """
         Plot the SiII fraction as a function of density, for some temperature.
@@ -39,17 +55,18 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
     tabHI = cg.RahmatiRT(3, 0.71)
 
     fracHI = tabHI.neutral_fraction(dens,temp[0])
-    plt.semilogx(dens, fracHI, color="red",ls="--")
+    plt.semilogx(dens, fracHI, color="red",ls="--", label="HI/H")
 
     ls = [":","-","-."]
     for tt in temp:
         ttSi = tt*np.ones_like(dens)
         fracSi = tab.ion(elem,ion,dens, ttSi)
-        plt.semilogx(dens, fracSi, color="green",ls=ls.pop())
+        plt.semilogx(dens, fracSi, color="green",ls=ls.pop(), label=r"$"+str(int(tt/1e4))+r"\times 10^4$ K")
 
-    plt.xlabel(r"$\rho_\mathrm{H}\; (\mathrm{amu}/\mathrm{cm}^3$)")
-    plt.ylabel(r"$\mathrm{m}_\mathrm{"+elem+str(ion)+r"} / \mathrm{m}_\mathrm{"+elem+r"}$")
+    plt.xlabel(r"$\rho_\mathrm{H}$ (cm$^{-3}$)")
+    plt.ylabel(r"$\mathrm{m}_\mathrm{"+elem+romanise_num(ion)+r"} / \mathrm{m}_\mathrm{"+elem+r"}$")
     plt.ylim(0,1)
+    plt.legend(loc=2)
     plt.show()
     if atten == 1:
         save_figure(path.join(outdir,elem+"_fracs"))
@@ -61,8 +78,8 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
         save_figure(path.join(outdir,elem+"_fracs_no_atten"))
     plt.clf()
 
-for atten in xrange(4):
-    plot_SivsHI([1e4, 2e4, 3e4], atten)
+for atten in (3,): #xrange(4):
+    plot_SivsHI([1e4, 2e4], atten, "Si", 2)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 4)
