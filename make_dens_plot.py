@@ -48,7 +48,7 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
         tab = cc.CloudyTable(3, "ion_out_no_atten")
 
     #The hydrogen density in atoms/cm^3
-    dens = np.logspace(-5,2,100)
+    dens = np.logspace(-5,0,100)
 
     #Roughly mean DLA metallicity
 
