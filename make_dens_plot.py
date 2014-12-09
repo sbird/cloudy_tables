@@ -68,14 +68,15 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
     plt.ylim(0,1)
     plt.legend(loc=2)
     plt.show()
+    filename = elem+str(ion)
     if atten == 1:
-        save_figure(path.join(outdir,elem+"_fracs"))
+        save_figure(path.join(outdir,filename+"_fracs"))
     elif atten == 2:
-        save_figure(path.join(outdir,elem+"_fracs_fancy_atten"))
+        save_figure(path.join(outdir,filename+"_fracs_fancy_atten"))
     elif atten == 3:
-        save_figure(path.join(outdir,elem+"_fracs_photo_atten"))
+        save_figure(path.join(outdir,filename+"_fracs_photo_atten"))
     else:
-        save_figure(path.join(outdir,elem+"_fracs_no_atten"))
+        save_figure(path.join(outdir,filename+"_fracs_no_atten"))
     plt.clf()
 
 for atten in (3,): #xrange(4):
@@ -83,5 +84,6 @@ for atten in (3,): #xrange(4):
     plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 4)
+    plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 2)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "O", 6)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "Mg", 2)
