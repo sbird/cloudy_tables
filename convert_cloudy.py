@@ -129,6 +129,17 @@ class CloudyTable:
         red_ints = intp.interp1d(self.reds, self.table,axis = 0)
         self.red_table = red_ints(redshift)
 
+    def get_temp_bounds(self):
+        """Get the range of temperatures over which the interpolation is valid"""
+        return (np.min(self.temp), np.max(self.temp))
+
+    def get_dens_bounds(self):
+        """Get the range of densities over which the interpolation is valid"""
+        return (np.min(self.dens), np.max(self.dens))
+
+    def get_red_bounds(self):
+        """Get the range of redshifts over which the interpolation is valid"""
+        return (np.min(self.reds), np.max(self.reds))
 
     def ion(self,species, ion, rho, temp):
         """Interpolate a table onto given redshift, density and temperature for species
