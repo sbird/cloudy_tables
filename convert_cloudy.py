@@ -131,11 +131,11 @@ class CloudyTable:
 
     def get_temp_bounds(self):
         """Get the range of temperatures over which the interpolation is valid"""
-        return (np.min(self.temp), np.max(self.temp))
+        return (10**np.min(self.temp), 10**np.max(self.temp))
 
     def get_dens_bounds(self):
         """Get the range of densities over which the interpolation is valid"""
-        return (np.min(self.dens), np.max(self.dens))
+        return (10**np.min(self.dens), 10**np.max(self.dens))
 
     def get_red_bounds(self):
         """Get the range of redshifts over which the interpolation is valid"""
