@@ -26,6 +26,12 @@ class UVBAtten(cold_gas.RahmatiRT):
     def atten(self,hden, temp):
         """Compute the reduction in the photoionisation rate at an energy of 13.6 eV
         at a given density and temperature, using the Rahmati fitting formula.
+        Note the Rahmati formula is based on the FG09 UVB; if you use a different UVB,
+        the self-shielding critical density will change somewhat.
+
+        For z < 5 the UVB is probably known well enough that not much will change, but for z > 5
+        the UVB is highly uncertain; any conclusions about cold gas absorbers at these redshifts
+        need to marginalise over the UVB amplitude here.
         """
         return self.photo_rate(10**hden, 10**temp)/self.gamma_UVB
 
@@ -181,7 +187,7 @@ def gen_redshift(rredshift):
 
 def gen_density(hhden):
     """Generate tables at given density"""
-    for rredshift in [4,3,2,1,0]:
+    for rredshift in np.arange(7,-1,-1):
         for ttemp in np.arange(3.,8.6,0.05):
             ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,2,"ion_out_photo_atten")
             cloudy_exe = path.join(os.getcwd(),"cloudy.exe")

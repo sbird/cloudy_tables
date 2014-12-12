@@ -79,7 +79,7 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
         save_figure(path.join(outdir,filename+"_fracs_no_atten"))
     plt.clf()
 
-for atten in (3,): #xrange(4):
+for atten in (3,4): #xrange(4):
     plot_SivsHI([1e4, 2e4], atten, "Si", 2)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
     plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
