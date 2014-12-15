@@ -108,7 +108,7 @@ class CloudyTable:
     def __init__(self, redshift, directory=cloudy_dir):
         """Read a cloudy table from somewhere"""
         self.savefile = path.join(directory,"cloudy_table.npz")
-        self.reds = np.arange(0,5)
+        self.reds = np.arange(0,8)
         self.dens = np.arange(-7,4,0.2)
         self.temp = np.arange(3,8.6, 0.05)
         self.species = ("H", "He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
