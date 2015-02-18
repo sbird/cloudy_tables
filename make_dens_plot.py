@@ -31,13 +31,8 @@ def romanise_num(num):
     else:
         return str(num)
 
-def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
-    """
-        Plot the SiII fraction as a function of density, for some temperature.
-        temp is an array, in K.
-    """
-    if np.size(temp) == 1:
-        temp = np.array([temp,])
+def get_cloudy_table(atten):
+    """Helper function to load a table"""
     if atten == 1:
         tab = cc.CloudyTable(3, "ion_out")
     elif atten == 2:
@@ -46,7 +41,28 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
         tab = cc.CloudyTable(3, "ion_out_photo_atten")
     else:
         tab = cc.CloudyTable(3, "ion_out_no_atten")
+    return tab
 
+def save_plot(atten, elem, ion, suffix):
+    """Helper function to save a nicely named file"""
+    filename = elem+str(ion)+"_"+suffix
+    if atten == 1:
+        save_figure(path.join(outdir,filename))
+    elif atten == 2:
+        save_figure(path.join(outdir,filename+"_fancy_atten"))
+    elif atten == 3:
+        save_figure(path.join(outdir,filename+"_photo_atten"))
+    else:
+        save_figure(path.join(outdir,filename+"_no_atten"))
+
+def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
+    """
+        Plot the SiII fraction as a function of density, for some temperature.
+        temp is an array, in K.
+    """
+    if np.size(temp) == 1:
+        temp = np.array([temp,])
+    tab = get_cloudy_table(atten)
     #The hydrogen density in atoms/cm^3
     dens = np.logspace(-5,0,100)
 
@@ -68,22 +84,49 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
     plt.ylim(0,1)
     plt.legend(loc=2)
     plt.show()
-    filename = elem+str(ion)
-    if atten == 1:
-        save_figure(path.join(outdir,filename+"_fracs"))
-    elif atten == 2:
-        save_figure(path.join(outdir,filename+"_fracs_fancy_atten"))
-    elif atten == 3:
-        save_figure(path.join(outdir,filename+"_fracs_photo_atten"))
-    else:
-        save_figure(path.join(outdir,filename+"_fracs_no_atten"))
+    save_plot(atten, elem, ion,"fracs")
     plt.clf()
 
-for atten in (3,4): #xrange(4):
-    plot_SivsHI([1e4, 2e4], atten, "Si", 2)
-    plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
-    plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
-    plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 4)
-    plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 2)
-    plot_SivsHI([1e4, 2e4, 3e4], atten, "O", 6)
-    plot_SivsHI([1e4, 2e4, 3e4], atten, "Mg", 2)
+
+def plot_td_contour(atten=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
+    """
+        Plot the ionic fraction as a function of density and temperature.
+    """
+    #Temperature
+    nsamp = 400
+    temp = np.logspace(tlim[0], tlim[1],nsamp)
+    #The hydrogen density in atoms/cm^3
+    dens = np.logspace(dlim[0], dlim[1],nsamp)
+
+    tab = get_cloudy_table(atten)
+
+    dd, tt = np.meshgrid(dens, temp)
+    ions = np.empty_like(dd)
+    for i in xrange(nsamp):
+        ions[:,i] = tab.ion(elem, ion, dd[:,i], tt[:,i])
+    maxx = np.max(ions)
+    levels = np.concatenate([[0.01,],  np.linspace(0.1, np.floor(10*maxx)/10., 4)])
+    cont = plt.contour(dd, tt, ions,levels=levels)
+    #Note this has to happen before the labels are drawn
+    plt.yscale('log')
+    plt.xscale('log')
+    plt.clabel(cont,inline=True)
+
+    plt.xlabel(r"$\rho_\mathrm{H}$ (cm$^{-3}$)")
+    plt.ylabel(r"T (K)")
+    plt.legend(loc=2)
+    plt.show()
+    save_plot(atten, elem, ion, "contour")
+    plt.clf()
+
+if __name__ == "__main__":
+    for atten in (3,4):
+        plot_SivsHI([1e4, 2e4], atten, "Si", 2)
+        plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
+        plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
+        plot_SivsHI([1e4, 2e4, 3e4], atten, "C", 2)
+        plot_SivsHI([1e4, 2e4, 3e4], atten, "Mg", 2)
+        plot_td_contour(atten, "C", 4)
+        plot_td_contour(atten, "C", 3, dlim=(-5,1))
+        plot_td_contour(atten, "O", 6, tlim=(3.5,6))
+        plot_td_contour(atten, "Si", 4, dlim=(-5,1))
