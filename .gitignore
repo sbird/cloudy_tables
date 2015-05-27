@@ -36,3 +36,9 @@ nosetests.xml
 
 #vim 
 .*.swp
+
+
+ion_out*
+cloudy.exe
+testplots
+UVB_tables
