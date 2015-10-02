@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Test the accuracy of the interpolation onto the cloudy grid"""
+from __future__ import print_function
 import os
 import os.path as path
 import subprocess
@@ -8,7 +9,7 @@ import convert_cloudy as cc
 import make_cloudy_input as mc #hammer
 
 #Test cases
-class TestCase:
+class TestCase(object):
     """Test-case class, containing an exactly worked out table"""
     def __init__(self, dens, temp, met = -1, redshift=3):
         self.dens = dens
@@ -37,9 +38,9 @@ def do_tests(tests, atten=2,cdir="ion_out"):
     maxd = 0.
     maxad = 0.
     for test in tests:
-        print "== d = ",test.dens, "T=",np.round(10**test.temp,2),"=="
+        print("== d = ",test.dens, "T=",np.round(10**test.temp,2),"==")
         test.make_table(atten, cdir)
-        for (elem, ion) in ions.iteritems():
+        for (elem, ion) in ions.items():
             iotab = np.round(np.log10(clou.ion(elem, ion, 10**test.dens, 10**test.temp))[0],2)
             abstab = np.log10(test.get_ion(elem, ion))
             #Find percent deviation in log space
@@ -54,15 +55,15 @@ def do_tests(tests, atten=2,cdir="ion_out"):
                 maxd = dev
             if absdev > maxad:
                 maxad = absdev
-            print elem, ion, "ion=",abstab, iotab,"rel dev: ",np.round(dev,2), "abs dev: ",absdev
+            print(elem, ion, "ion=",abstab, iotab,"rel dev: ",np.round(dev,2), "abs dev: ",absdev)
 
-    print "Max dev: ",maxd, "max abs dev: ",maxad
+    print("Max dev: ",maxd, "max abs dev: ",maxad)
 
 if __name__ == "__main__":
     testcases = [TestCase(-1.035,4.43), TestCase(-1.035, 4.4), TestCase(-2.43,5.77), TestCase(1.64,4.12), TestCase(0.52, 4.22), TestCase(-1.43, 4.26)]
     #print "==Uniform UVB attenuation=="
     #do_tests(testcases,1)
-    print "==No UVB attenuation=="
+    print("==No UVB attenuation==")
     do_tests(testcases, 0, "ion_out_no_atten")
-    print "==Fancy UVB attenuation around Lya=="
+    print("==Fancy UVB attenuation around Lya==")
     do_tests(testcases, 2, "ion_out_photo_atten")

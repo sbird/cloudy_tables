@@ -70,7 +70,7 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
     #Then output main body
-    for xx in xrange(np.shape(uvb_table)[0]):
+    for xx in range(np.shape(uvb_table)[0]):
         uvb_str+="continue ("+str(uvb_table[xx,0])+" , "+str(uvb_table[xx,1])+" )\n"
     #Then output zero background at high energies
     uvb_str+="continue ("+str(uvb_table[-1,0]*1.0001)+" , -35.0 )\n"
@@ -87,7 +87,7 @@ def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
     #Then output main body
-    for xx in xrange(np.shape(uvb_table)[0]):
+    for xx in range(np.shape(uvb_table)[0]):
         uvb_str+="continue ("+str(uvb_table[xx,0])+" , "+str(uvb_table[xx,1])+" )\n"
     #Then output zero background at high energies
     uvb_str+="continue ("+str(uvb_table[-1,0]*1.0001)+" , -35.0 )\n"

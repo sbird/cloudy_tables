@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Make a plot showing the fraction of SiII with density and also the fraction of HI with density"""
 
+from __future__ import print_function
 import matplotlib
 matplotlib.use('PDF')
 
@@ -13,9 +14,10 @@ import numpy as np
 from save_figure import save_figure
 
 outdir = "testplots/"
-print "Plots at: ",outdir
+print("Plots at: ",outdir)
 
 def romanise_num(num):
+    """Turn a number into a roman numeral (very badly)"""
     if num == 1:
         return "I"
     elif num == 2:
@@ -31,38 +33,40 @@ def romanise_num(num):
     else:
         return str(num)
 
-def get_cloudy_table(atten):
-    """Helper function to load a table"""
-    if atten == 1:
+def get_cloudy_table(ss_corr):
+    """Helper function to load a table.
+    ss_corr chooses which self-shielding correction to use.
+    ss_corr == 3 is best. ss_corr == 4 disables self-shielding."""
+    if ss_corr == 1:
         tab = cc.CloudyTable(3, "ion_out")
-    elif atten == 2:
+    elif ss_corr == 2:
         tab = cc.CloudyTable(3, "ion_out_fancy_atten")
-    elif atten == 3:
+    elif ss_corr == 3:
         tab = cc.CloudyTable(3, "ion_out_photo_atten")
     else:
         tab = cc.CloudyTable(3, "ion_out_no_atten")
     return tab
 
-def save_plot(atten, elem, ion, suffix):
+def save_plot(ss_corr, elem, ion, suffix):
     """Helper function to save a nicely named file"""
     filename = elem+str(ion)+"_"+suffix
-    if atten == 1:
+    if ss_corr == 1:
         save_figure(path.join(outdir,filename))
-    elif atten == 2:
+    elif ss_corr == 2:
         save_figure(path.join(outdir,filename+"_fancy_atten"))
-    elif atten == 3:
+    elif ss_corr == 3:
         save_figure(path.join(outdir,filename+"_photo_atten"))
     else:
         save_figure(path.join(outdir,filename+"_no_atten"))
 
-def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
+def plot_SivsHI(temp = 3e4, ss_corr=1, elem="Si", ion=2):
     """
         Plot the SiII fraction as a function of density, for some temperature.
         temp is an array, in K.
     """
     if np.size(temp) == 1:
         temp = np.array([temp,])
-    tab = get_cloudy_table(atten)
+    tab = get_cloudy_table(ss_corr)
     #The hydrogen density in atoms/cm^3
     dens = np.logspace(-5,0,100)
 
@@ -84,11 +88,11 @@ def plot_SivsHI(temp = 3e4, atten=1, elem="Si", ion=2):
     plt.ylim(0,1)
     plt.legend(loc=2)
     plt.show()
-    save_plot(atten, elem, ion,"fracs")
+    save_plot(ss_corr, elem, ion,"fracs")
     plt.clf()
 
 
-def plot_td_contour(atten=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
+def plot_td_contour(ss_corr=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
     """
         Plot the ionic fraction as a function of density and temperature.
     """
@@ -98,11 +102,11 @@ def plot_td_contour(atten=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
     #The hydrogen density in atoms/cm^3
     dens = np.logspace(dlim[0], dlim[1],nsamp)
 
-    tab = get_cloudy_table(atten)
+    tab = get_cloudy_table(ss_corr)
 
     dd, tt = np.meshgrid(dens, temp)
     ions = np.empty_like(dd)
-    for i in xrange(nsamp):
+    for i in range(nsamp):
         ions[:,i] = tab.ion(elem, ion, dd[:,i], tt[:,i])
     maxx = np.max(ions)
     levels = np.concatenate([[0.01,],  np.linspace(0.1, np.floor(10*maxx)/10., 4)])
@@ -116,7 +120,7 @@ def plot_td_contour(atten=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
     plt.ylabel(r"T (K)")
     plt.legend(loc=2)
     plt.show()
-    save_plot(atten, elem, ion, "contour")
+    save_plot(ss_corr, elem, ion, "contour")
     plt.clf()
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 import numpy as np
 
 #For hydrogen
-class PIParams:
+class PIParams(object):
     """Class for computing photoionisation cross-sections from the Opacity Project.
     Values are from Table 1 of astro-ph/9601009"""
     def __init__(self, nuthr, nu0, sigma0, ya, P, yw, y0, y1):

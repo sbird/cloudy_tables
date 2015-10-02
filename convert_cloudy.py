@@ -92,10 +92,10 @@ def read_all_tables(red, dens, temp, directory):
     nrho = np.size(dens)
     ntemp = np.size(temp)
     tables = np.empty([nred, nrho, ntemp,9, nions])
-    for zz in xrange(nred):
+    for zz in range(nred):
         zdir = "zz"+str(red[zz])
-        for rr in xrange(nrho):
-            for tt in xrange(ntemp):
+        for rr in range(nrho):
+            for tt in range(ntemp):
                 strnums = path.join("h"+str(dens[rr]), "T"+str(temp[tt]))
                 if np.abs(dens[rr]) < 1.e-3:
                     strnums = path.join("h0.0", "T"+str(temp[tt]))
@@ -103,7 +103,7 @@ def read_all_tables(red, dens, temp, directory):
                 tables[zz,rr,tt,:,:] = convert_single_file(ionfile)
     return tables
 
-class CloudyTable:
+class CloudyTable(object):
     """Class to interpolate tables from cloudy for a desired redshift, density and temperature"""
     def __init__(self, redshift, directory=cloudy_dir):
         """Read a cloudy table from somewhere"""
