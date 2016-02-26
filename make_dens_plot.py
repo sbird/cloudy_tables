@@ -33,18 +33,18 @@ def romanise_num(num):
     else:
         return str(num)
 
-def get_cloudy_table(ss_corr):
+def get_cloudy_table(ss_corr, redshift=3):
     """Helper function to load a table.
     ss_corr chooses which self-shielding correction to use.
     ss_corr == 3 is best. ss_corr == 4 disables self-shielding."""
     if ss_corr == 1:
-        tab = cc.CloudyTable(3, "ion_out")
+        tab = cc.CloudyTable(redshift, "ion_out")
     elif ss_corr == 2:
-        tab = cc.CloudyTable(3, "ion_out_fancy_atten")
+        tab = cc.CloudyTable(redshift, "ion_out_fancy_atten")
     elif ss_corr == 3:
-        tab = cc.CloudyTable(3, "ion_out_photo_atten")
+        tab = cc.CloudyTable(redshift, "ion_out_photo_atten")
     else:
-        tab = cc.CloudyTable(3, "ion_out_no_atten")
+        tab = cc.CloudyTable(redshift, "ion_out_no_atten")
     return tab
 
 def save_plot(ss_corr, elem, ion, suffix):
@@ -92,7 +92,7 @@ def plot_SivsHI(temp = 3e4, ss_corr=1, elem="Si", ion=2):
     plt.clf()
 
 
-def plot_td_contour(ss_corr=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
+def plot_td_contour(ss_corr=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1), redshift=3):
     """
         Plot the ionic fraction as a function of density and temperature.
     """
@@ -102,7 +102,7 @@ def plot_td_contour(ss_corr=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
     #The hydrogen density in atoms/cm^3
     dens = np.logspace(dlim[0], dlim[1],nsamp)
 
-    tab = get_cloudy_table(ss_corr)
+    tab = get_cloudy_table(ss_corr, redshift=redshift)
 
     dd, tt = np.meshgrid(dens, temp)
     ions = np.empty_like(dd)
@@ -120,7 +120,7 @@ def plot_td_contour(ss_corr=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1)):
     plt.ylabel(r"T (K)")
     plt.legend(loc=2)
     plt.show()
-    save_plot(ss_corr, elem, ion, "contour")
+    save_plot(ss_corr, elem, ion, "contour_"+str(redshift))
     plt.clf()
 
 if __name__ == "__main__":
