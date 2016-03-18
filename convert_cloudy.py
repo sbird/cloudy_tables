@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """Short script to read cloudy table files and output numpy arrays."""
 
-import numpy as np
 import re
 import os.path as path
+import glob
+import numpy as np
 import scipy.interpolate as intp
 from scipy.ndimage import map_coordinates
 
@@ -80,7 +81,7 @@ def convert_single_file(ion_table):
         line = f.readline()
     return num_table
 
-def read_all_tables(red, dens, temp, directory):
+def read_all_tables(dens, temp, directory):
     """
     Read a batch of tables on a grid of density (dens) and temperature (rho) from a directory.
     Subdirs are in the form: zz$red/h$DENS/T$TEMP/
@@ -88,18 +89,20 @@ def read_all_tables(red, dens, temp, directory):
     REDSHIFT, DENSITY, TEMPERATURE, SPECIES, ION
     """
     #Last two indices are num. species and n. ions
-    nred = np.size(red)
+    #Deduce number of redshift bins by globbing directories.
+    zdirs = glob.glob(path.join(directory, "zz*")).sort()
+    nred = np.size(zdirs)
     nrho = np.size(dens)
     ntemp = np.size(temp)
     tables = np.empty([nred, nrho, ntemp,9, nions])
     for zz in range(nred):
-        zdir = "zz"+str(red[zz])
+        zdir = zdirs[zz]
         for rr in range(nrho):
             for tt in range(ntemp):
                 strnums = path.join("h"+str(dens[rr]), "T"+str(temp[tt]))
                 if np.abs(dens[rr]) < 1.e-3:
                     strnums = path.join("h0.0", "T"+str(temp[tt]))
-                ionfile = path.join(directory, zdir, strnums, "ionization.dat")
+                ionfile = path.join(zdir, strnums, "ionization.dat")
                 tables[zz,rr,tt,:,:] = convert_single_file(ionfile)
     return tables
 
@@ -108,7 +111,6 @@ class CloudyTable(object):
     def __init__(self, redshift, directory=cloudy_dir):
         """Read a cloudy table from somewhere"""
         self.savefile = path.join(directory,"cloudy_table.npz")
-        self.reds = np.arange(0,8)
         self.dens = np.arange(-7,4,0.2)
         self.temp = np.arange(3,8.6, 0.05)
         self.species = ("H", "He", "C", "N", "O", "Ne", "Mg", "Si", "Fe")
@@ -117,8 +119,11 @@ class CloudyTable(object):
         try:
             datafile = np.load(self.savefile)
             self.table = datafile["table"]
+            #Deduce number of redshift bins in table
+            nredshift = np.shape(self.table)[0]
+            self.reds = np.arange(0,nredshift)
         except (IOError, KeyError):
-            self.table = read_all_tables(self.reds, self.dens, self.temp, directory)
+            self.table = read_all_tables(self.dens, self.temp, directory)
             self.save_file()
         self.directory = directory
         #Set up interpolation objects
