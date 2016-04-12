@@ -2,15 +2,14 @@
 """Make a plot showing the fraction of SiII with density and also the fraction of HI with density"""
 
 from __future__ import print_function
+import os.path as path
+import numpy as np
 import matplotlib
 matplotlib.use('PDF')
-
 import matplotlib.pyplot as plt
 
 import convert_cloudy as cc
 import cold_gas as cg
-import os.path as path
-import numpy as np
 from save_figure import save_figure
 
 outdir = "testplots/"
@@ -18,12 +17,8 @@ print("Plots at: ",outdir)
 
 def romanise_num(num):
     """Turn a number into a roman numeral (very badly)"""
-    if num == 1:
-        return "I"
-    elif num == 2:
-        return "II"
-    elif num == 3:
-        return "III"
+    if 1 <= num <= 3:
+        return "I"*num
     elif num == 4:
         return "IV"
     elif num == 5:
@@ -31,35 +26,29 @@ def romanise_num(num):
     elif num == 6:
         return "VI"
     else:
-        return str(num)
+        raise RuntimeError("Not implemented")
 
-def get_cloudy_table(ss_corr, redshift=3):
-    """Helper function to load a table.
-    ss_corr chooses which self-shielding correction to use.
-    ss_corr == 3 is best. ss_corr == 4 disables self-shielding."""
-    if ss_corr == 1:
-        tab = cc.CloudyTable(redshift, "ion_out")
-    elif ss_corr == 2:
-        tab = cc.CloudyTable(redshift, "ion_out_fancy_atten")
-    elif ss_corr == 3:
+def get_cloudy_table(ss_corr=True, redshift=3):
+    """
+    Helper function to load a table.
+    If ss_corr == True, attenuate the UVB with a self-shielding correction
+    which accounts for the frequency dependence of the hydrogen cross-section.
+    """
+    if ss_corr:
         tab = cc.CloudyTable(redshift, "ion_out_photo_atten")
     else:
         tab = cc.CloudyTable(redshift, "ion_out_no_atten")
     return tab
 
-def save_plot(ss_corr, elem, ion, suffix):
+def save_plot(elem, ion, suffix, ss_corr=True):
     """Helper function to save a nicely named file"""
     filename = elem+str(ion)+"_"+suffix
-    if ss_corr == 1:
-        save_figure(path.join(outdir,filename))
-    elif ss_corr == 2:
-        save_figure(path.join(outdir,filename+"_fancy_atten"))
-    elif ss_corr == 3:
+    if ss_corr:
         save_figure(path.join(outdir,filename+"_photo_atten"))
     else:
         save_figure(path.join(outdir,filename+"_no_atten"))
 
-def plot_SivsHI(temp = 3e4, ss_corr=1, elem="Si", ion=2):
+def plot_SivsHI(temp = 3e4, ss_corr=True, elem="Si", ion=2):
     """
         Plot the SiII fraction as a function of density, for some temperature.
         temp is an array, in K.
@@ -88,11 +77,11 @@ def plot_SivsHI(temp = 3e4, ss_corr=1, elem="Si", ion=2):
     plt.ylim(0,1)
     plt.legend(loc=2)
     plt.show()
-    save_plot(ss_corr, elem, ion,"fracs")
+    save_plot(elem, ion,suffix="fracs",ss_corr=ss_corr)
     plt.clf()
 
 
-def plot_td_contour(ss_corr=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1), redshift=3):
+def plot_td_contour(ss_corr=True, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1), redshift=3):
     """
         Plot the ionic fraction as a function of density and temperature.
     """
@@ -120,11 +109,11 @@ def plot_td_contour(ss_corr=1, elem="Si", ion=2, tlim=(3.5, 5.5), dlim=(-6,1), r
     plt.ylabel(r"T (K)")
     plt.legend(loc=2)
     plt.show()
-    save_plot(ss_corr, elem, ion, "contour_"+str(redshift))
+    save_plot(elem, ion, suffix="contour_"+str(redshift),ss_corr=ss_corr)
     plt.clf()
 
 if __name__ == "__main__":
-    for atten in (3,4):
+    for atten in (True,False):
         plot_SivsHI([1e4, 2e4], atten, "Si", 2)
         plot_SivsHI([1e4, 2e4, 3e4], atten, "He", 1)
         plot_SivsHI([1e4, 2e4, 3e4], atten, "H", 1)
