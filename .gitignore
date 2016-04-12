@@ -38,6 +38,7 @@ nosetests.xml
 .*.swp
 
 
-ion_out*
+ion_out*/zz?
+ion_out*/test
 cloudy.exe
 testplots
