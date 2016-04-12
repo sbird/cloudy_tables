@@ -41,4 +41,3 @@ nosetests.xml
 ion_out*
 cloudy.exe
 testplots
-UVB_tables
