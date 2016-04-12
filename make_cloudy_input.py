@@ -5,6 +5,7 @@ import subprocess
 import os
 import os.path as path
 import multiprocessing as mp
+import functools
 import numpy as np
 import photocs
 import cold_gas
@@ -193,7 +194,7 @@ def gen_density(hhden, atten=True, tdir = "ion_out_photo_atten", rrange=None):
 def make_tables(processes=32, atten=True, tdir="ion_out_photo_atten", rrange=None):
     """Make a table using a parallel multiprocessing pool."""
     pool = mp.Pool(processes=processes)
-    f = lambda hhden: gen_density(hhden, atten=atten, tdir=tdir, rrange=rrange)
+    f = functools.partial(gen_density,atten=atten, tdir=tdir, rrange=rrange)
     pool.map(f,np.arange(-7.,4.,0.2))
 
 if __name__ == "__main__":
