@@ -99,8 +99,9 @@ def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
         uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
 
-def output_cloudy_config(redshift, hden, metals, temp, atten=True, tdir="ion_out_photo_atten",outfile="cloudy_param.in"):
-    """Generate a cloudy config file with the given options, in directory outdir/zz(redshift)"""
+def output_cloudy_config(redshift, hden, metals, temp, atten=True, tdir="ion_out_photo_atten",outfile="cloudy_param.in", uvb_factor=1.):
+    """Generate a cloudy config file with the given options, in directory outdir/zz(redshift).
+    If atten=True, reduce the UVb at high frequencies to account for self-shielding by neutral hydrogen."""
 
     real_outdir = outdir(redshift, hden, temp, tdir)
     out = open(path.join(real_outdir,outfile),'w')
@@ -117,6 +118,8 @@ abundances GASS10
 
     #Get the UVB table
     uvb_table = load_uvb_table(redshift)
+    #Change the UVB by a constant factor, to allow us to check dependence on UVB amplitude uncertainty.
+    uvb_table[:,1]*=uvb_factor
     if atten:
         uvb_str = gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp)
     else:
