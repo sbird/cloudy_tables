@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """Generate parameter files for cloudy, then run cloudy a number of times to generate a folder tree of files"""
-import os.path as path
-import numpy as np
 import math
 import subprocess
 import os
-import photocs
+import os.path as path
 import multiprocessing as mp
+import numpy as np
+import photocs
 import cold_gas
 
 def load_uvb_table(redshift, uvb_path="UVB_tables"):
@@ -99,7 +99,7 @@ def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
         uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
 
-def output_cloudy_config(redshift, hden, metals, temp, atten=1, tdir="ion_out",outfile="cloudy_param.in"):
+def output_cloudy_config(redshift, hden, metals, temp, atten=True, tdir="ion_out_photo_atten",outfile="cloudy_param.in"):
     """Generate a cloudy config file with the given options, in directory outdir/zz(redshift)"""
 
     real_outdir = outdir(redshift, hden, temp, tdir)
@@ -117,10 +117,10 @@ abundances GASS10
 
     #Get the UVB table
     uvb_table = load_uvb_table(redshift)
-    if atten < 2:
-        uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp,atten)
-    else:
+    if atten:
         uvb_str = gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp)
+    else:
+        uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp,atten=False)
 
     #Print UVB
     out.write(uvb_str)
@@ -176,25 +176,23 @@ def outdir(redshift, hden, temp, tdir="ion_out"):
         pass
     return real_outdir
 
-def gen_redshift(rredshift):
-    """Function for generating tables at a particular redshift"""
-    for hhden in np.arange(-7.,4.,0.2):
-        for ttemp in np.arange(3.,8.6,0.05):
-            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,2,"ion_out_fancy_atten")
-            infile = path.join(ooutdir, "cloudy_param")
-            if not path.exists(path.join(ooutdir, "ionization.dat")):
-                subprocess.call(['./cloudy.exe', '-r', infile])
-
-def gen_density(hhden):
+def gen_density(hhden, atten=True, tdir = "ion_out_photo_atten"):
     """Generate tables at given density"""
     for rredshift in np.arange(7,-1,-1):
         for ttemp in np.arange(3.,8.6,0.05):
-            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,2,"ion_out_photo_atten")
+            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,atten=atten,tdir=tdir)
             cloudy_exe = path.join(os.getcwd(),"cloudy.exe")
             if not path.exists(path.join(ooutdir, "ionization.dat")):
                 subprocess.call([cloudy_exe, '-r', "cloudy_param"],cwd=ooutdir)
 
+def make_tables(processes=32, atten=True, tdir="ion_out_photo_atten"):
+    """Make a table using a parallel multiprocessing pool."""
+    pool = mp.Pool(processes=processes)
+    f = lambda hhden: gen_density(hhden, atten=atten, tdir=tdir)
+    pool.map(f,np.arange(-7.,4.,0.2))
 
 if __name__ == "__main__":
-    pool = mp.Pool(processes=32)
-    pool.map(gen_density,np.arange(-7.,4.,0.2))
+    #Make the default table
+    make_tables(atten=True, tdir="ion_out_photo_atten")
+    #Make the table without self-shielding
+    make_tables(atten=False, tdir="ion_out_no_atten")
