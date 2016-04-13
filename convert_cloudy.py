@@ -90,8 +90,10 @@ def read_all_tables(dens, temp, directory):
     """
     #Last two indices are num. species and n. ions
     #Deduce number of redshift bins by globbing directories.
-    zdirs = glob.glob(path.join(directory, "zz*")).sort()
+    zdirs = glob.glob(path.join(directory, "zz*"))
+    zdirs.sort()
     nred = np.size(zdirs)
+    assert nred > 0
     nrho = np.size(dens)
     ntemp = np.size(temp)
     tables = np.empty([nred, nrho, ntemp,9, nions])
