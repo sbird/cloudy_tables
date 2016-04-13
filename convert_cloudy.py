@@ -108,6 +108,18 @@ def read_all_tables(dens, temp, directory):
                 tables[zz,rr,tt,:,:] = convert_single_file(ionfile)
     return tables
 
+def read_redshifts(directory):
+    """Deduce the redshift information from the directory structure."""
+    zdirs = glob.glob(path.join(directory, "zz*"))
+    zdirs.sort()
+    if len(zdirs) == 0:
+        raise IOError("No directories found")
+    reds = np.array([],dtype=np.int)
+    for zdir in zdirs:
+        match = re.search('zz([0-9]*)',zdir)
+        reds = np.append(reds,int(match.groups()[0]))
+    return reds
+
 class CloudyTable(object):
     """Class to interpolate tables from cloudy for a desired redshift, density and temperature"""
     def __init__(self, redshift, directory=cloudy_dir):
@@ -121,12 +133,16 @@ class CloudyTable(object):
         try:
             datafile = np.load(self.savefile)
             self.table = datafile["table"]
-            #Deduce number of redshift bins in table
-            nredshift = np.shape(self.table)[0]
-            self.reds = np.arange(0,nredshift)
         except (IOError, KeyError):
             self.table = read_all_tables(self.dens, self.temp, directory)
             self.save_file()
+        #Deduce number of redshift bins in table
+        nredshift = np.shape(self.table)[0]
+        try:
+            self.reds = read_redshifts(directory)[:nredshift]
+        except IOError:
+            self.reds = np.arange(0,nredshift)
+        assert np.size(self.reds) == nredshift
         self.directory = directory
         #Set up interpolation objects
         #Redshift is first axis.
