@@ -180,21 +180,21 @@ def outdir(redshift, hden, temp, tdir="ion_out"):
         pass
     return real_outdir
 
-def gen_density(hhden, atten=True, tdir = "ion_out_photo_atten", rrange=None):
+def gen_density(hhden, atten=True, tdir = "ion_out_photo_atten", rrange=None, uvb_factor=1.):
     """Generate tables at given density"""
     if rrange is None:
         rrange = np.arange(7,-1,-1)
     for rredshift in rrange:
         for ttemp in np.arange(3.,8.6,0.05):
-            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,atten=atten,tdir=tdir)
+            ooutdir = output_cloudy_config(rredshift, hhden, -1, ttemp,atten=atten,tdir=tdir, uvb_factor=uvb_factor)
             cloudy_exe = path.join(os.getcwd(),"cloudy.exe")
             if not path.exists(path.join(ooutdir, "ionization.dat")):
                 subprocess.call([cloudy_exe, '-r', "cloudy_param"],cwd=ooutdir)
 
-def make_tables(processes=32, atten=True, tdir="ion_out_photo_atten", rrange=None):
+def make_tables(processes=32, atten=True, tdir="ion_out_photo_atten", rrange=None,uvb_factor=1.):
     """Make a table using a parallel multiprocessing pool."""
     pool = mp.Pool(processes=processes)
-    f = functools.partial(gen_density,atten=atten, tdir=tdir, rrange=rrange)
+    f = functools.partial(gen_density,atten=atten, tdir=tdir, rrange=rrange,uvb_factor=uvb_factor)
     pool.map(f,np.arange(-7.,4.,0.2))
 
 if __name__ == "__main__":
