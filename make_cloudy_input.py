@@ -36,7 +36,7 @@ class UVBAtten(cold_gas.RahmatiRT):
         """
         return self.photo_rate(10**hden, 10**temp)/self.gamma_UVB
 
-def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
+def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp, uvb_factor=1.):
     """
     Generate the cloudy input string from a UVB table, reducing the UVB amplitude at energies >= 13.6eV
     by a self-shielding factor.
@@ -77,11 +77,12 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp):
     uvb_str+="continue ("+str(uvb_table[-1,0]*1.0001)+" , -35.0 )\n"
     uvb_str+="continue ( 7354000.0 , -35.0 ) \n"
     #That was the UVB shape, now print the amplitude
-    uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
+    uvb_amp = uvb_table[0,1]+ np.log10(uvb_factor)
+    uvb_str+="f(nu)="+str(uvb_amp)+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
 
 
-def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
+def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True, uvb_factor=1.):
     """Generate the cloudy input string from a UVB table"""
     UVB = UVBAtten(redshift)
     #First output very small background at low energies
@@ -94,15 +95,16 @@ def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True):
     uvb_str+="continue ("+str(uvb_table[-1,0]*1.0001)+" , -35.0 )\n"
     uvb_str+="continue ( 7354000.0 , -35.0 ) \n"
     #That was the UVB shape, now print the amplitude
+    uvb_amp = uvb_table[0,1]+ np.log10(uvb_factor)
     if atten:
-        uvb_str+="f(nu)="+str(uvb_table[0,1]+np.log10(UVB.atten(hden,temp)))+" at "+str(uvb_table[0,0])+" Ryd\n"
-    else:
-        uvb_str+="f(nu)="+str(uvb_table[0,1])+" at "+str(uvb_table[0,0])+" Ryd\n"
+        uvb_amp += np.log10(UVB.atten(hden, temp))
+    uvb_str+="f(nu)="+str(uvb_amp)+" at "+str(uvb_table[0,0])+" Ryd\n"
     return uvb_str
 
 def output_cloudy_config(redshift, hden, metals, temp, atten=True, tdir="ion_out_photo_atten",outfile="cloudy_param.in", uvb_factor=1.):
     """Generate a cloudy config file with the given options, in directory outdir/zz(redshift).
-    If atten=True, reduce the UVb at high frequencies to account for self-shielding by neutral hydrogen."""
+    If atten=True, reduce the UVb at high frequencies to account for self-shielding by neutral hydrogen.
+    The overall UVB amplitude is multiplied by uvb_factor."""
 
     real_outdir = outdir(redshift, hden, temp, tdir)
     out = open(path.join(real_outdir,outfile),'w')
@@ -119,12 +121,10 @@ abundances GASS10
 
     #Get the UVB table
     uvb_table = load_uvb_table(redshift)
-    #Change the UVB by a constant factor, to allow us to check dependence on UVB amplitude uncertainty.
-    uvb_table[:,1]*=uvb_factor
     if atten:
-        uvb_str = gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp)
+        uvb_str = gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp, uvb_factor=uvb_factor)
     else:
-        uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp,atten=False)
+        uvb_str = gen_cloudy_uvb(uvb_table, redshift, hden,temp,atten=False, uvb_factor=uvb_factor)
 
     #Print UVB
     out.write(uvb_str)
