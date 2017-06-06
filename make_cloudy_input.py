@@ -8,7 +8,7 @@ import multiprocessing as mp
 import functools
 import numpy as np
 import photocs
-import cold_gas
+from .. import gas_properties
 
 def load_uvb_table(redshift, uvb_path="UVB_tables"):
     """Load one of Claude's UVB tables, and convert to Cloudy units"""
@@ -21,7 +21,7 @@ def load_uvb_table(redshift, uvb_path="UVB_tables"):
     uvb_table[:,1] = np.log10(4*math.pi*uvb_table[:,1])-21
     return uvb_table
 
-class UVBAtten(cold_gas.RahmatiRT):
+class UVBAtten(gas_properties.GasProperties):
     """Attenuate the UVB using the self-shielding prescription of Rahmati 2013"""
 
     def atten(self,hden, temp):
@@ -34,7 +34,7 @@ class UVBAtten(cold_gas.RahmatiRT):
         the UVB is highly uncertain; any conclusions about cold gas absorbers at these redshifts
         need to marginalise over the UVB amplitude here.
         """
-        return self.photo_rate(10**hden, 10**temp)/self.gamma_UVB
+        return self._photo_rate(10**hden, 10**temp)/self.gamma_UVB
 
 def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp, uvb_factor=1.):
     """
