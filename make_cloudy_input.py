@@ -8,7 +8,7 @@ import multiprocessing as mp
 import functools
 import numpy as np
 import photocs
-from .. import gas_properties
+import fake_spectra.gas_properties as gas_properties
 
 def load_uvb_table(redshift, uvb_path="UVB_tables"):
     """Load one of Claude's UVB tables, and convert to Cloudy units"""
@@ -58,7 +58,7 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp, uvb_factor=1.):
     Note Rydberg ~ 1/wavelength, and 1 Rydberg is the energy of a photon at the Lyman limit, ie,
     with wavelength 911.8 Angstrom.
     """
-    UVB = UVBAtten(redshift)
+    UVB = UVBAtten(redshift,None)
     #Attenuate the UVB by an amount dependent on the hydrogen
     #photoionisation cross-section for hydrogen as a function of frequency.
     #This is zero for energies less than 13.6 eV = 1 Ryd, and then falls off like E^-3
@@ -84,7 +84,7 @@ def gen_cloudy_uvb_shape_atten(uvb_table, redshift, hden,temp, uvb_factor=1.):
 
 def gen_cloudy_uvb(uvb_table, redshift, hden,temp, atten=True, uvb_factor=1.):
     """Generate the cloudy input string from a UVB table"""
-    UVB = UVBAtten(redshift)
+    UVB = UVBAtten(redshift, None)
     #First output very small background at low energies
     uvb_str = "interpolate ( 0.00000001001 , -35.0)\n"
     uvb_str+="continue ("+str(uvb_table[0,0]*0.99999)+", -35.0)\n"
