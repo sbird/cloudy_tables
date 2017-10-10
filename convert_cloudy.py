@@ -178,8 +178,9 @@ class CloudyTable(object):
         #in hydrogen number density. Since we ask cloudy for
         #a 1/10 solar metallicity gas (and cloudy thinks helium is a metal),
         #we need to correct by nHe = 0.0851 (GASS10 helium number density)
-        # 0.9735 = (1 - 0.1 * (4 * 0.7381 * nHe - 0.0134)), where 0.0134 is solar metallicity.
-        rho *= 0.9735
+        # 0.9735 = (1 - (4 * nHe(1-4*nHe) - 0.1*0.0134)), where 0.0134
+        #is solar metallicity.
+        rho *= 0.774132
         cspe = self.species.index(species)
         #raise exception if too far outside grid
         if np.log10(np.max(rho)) > np.max(self.dens)+0.2:
