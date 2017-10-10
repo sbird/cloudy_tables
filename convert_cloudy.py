@@ -167,13 +167,19 @@ class CloudyTable(object):
     def ion(self,species, ion, rho, temp):
         """Interpolate a table onto given redshift, density and temperature for species
         Returns a log( ionisation fraction ).
-        rho is the density of hydrogen in atoms / cm^3. Internally the log is taken
+        rho is the gas density in atoms / cm^3. Internally the log is taken
         temp is the temperature in K
         red is the redshift
         species is the element name of the metal species we want
         ion is the ionisation number, starting from 1, so CIV is ('C', 4).
         Returns the fraction of this ion in the species
         """
+        #Note we have taken rho as gas density. Cloudy takes hden
+        #in hydrogen number density. Since we ask cloudy for
+        #a 1/10 solar metallicity gas (and cloudy thinks helium is a metal),
+        #we need to correct by nHe = 0.0851 (GASS10 helium number density)
+        # 0.9735 = (1 - 0.1 * (4 * 0.7381 * nHe - 0.0134)), where 0.0134 is solar metallicity.
+        rho *= 0.9735
         cspe = self.species.index(species)
         #raise exception if too far outside grid
         if np.log10(np.max(rho)) > np.max(self.dens)+0.2:
